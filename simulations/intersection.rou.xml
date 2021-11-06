@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on Sat 06 Nov 2021 10:21:52 AM UTC by Eclipse SUMO netedit Version 1.8.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <output>
+        <output-file value="/home/veins/uni/tutorials/intersection.net.xml"/>
+    </output>
+
+    <processing>
+        <offset.disable-normalization value="true"/>
+    </processing>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+    </junctions>
+
+    <netedit>
+        <route-files value="/home/veins/uni/tutorials/intersection.rou.xml"/>
+    </netedit>
+
+    <report>
+        <aggregate-warnings value="5"/>
+    </report>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <route edges="-gneE2 gneE1" color="yellow" id="route_0"/>
+    <route edges="gneE0 gneE1" color="yellow" id="route_1"/>
+    <trip id="vehicle_0" depart="0.00" color="255,90,0" from="-gneE2" to="gneE1"/>
+    <trip id="vehicle_1" depart="0.00" color="129,92,255" from="gneE0" to="gneE1"/>
+</routes>
