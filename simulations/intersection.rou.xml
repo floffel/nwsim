@@ -29,6 +29,10 @@
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     <route edges="-gneE2 gneE1" color="yellow" id="route_0"/>
     <route edges="gneE0 gneE1" color="yellow" id="route_1"/>
-    <trip id="vehicle_0" depart="0.00" color="255,90,0" from="-gneE2" to="gneE1"/>
-    <trip id="vehicle_1" depart="0.00" color="129,92,255" from="gneE0" to="gneE1"/>
+
+    <flow id="fl_right_to_left" color="255,90,0" route="route_0" probability="0.7"/> 
+    <flow id="fl_top_to_left" color="255,90,0" route="route_1" probability="0.7"/> 
+	
+    <!--<trip id="vehicle_0" depart="0.00" color="255,90,0" from="-gneE2" to="gneE1"/>
+    <trip id="vehicle_1" depart="0.00" color="129,92,255" from="gneE0" to="gneE1"/>-->
 </routes>
