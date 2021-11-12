@@ -6,8 +6,8 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="/home/veins/uni/tutorials/intersection.net.xml"/>
-        <route-files value="/home/veins/uni/tutorials/intersection.rou.xml"/>
+	    <net-file value="/home/veins/Documents/veins_project/veins_project/simulations/intersection.net.xml"/>
+	    <route-files value="/home/veins/Documents/veins_project/veins_project/simulations/intersection.rou.xml"/>
     </input>
 
 </configuration>
