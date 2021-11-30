@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<shapes>
+    <poly id="1" type="building.church" color="1.00,0.00,0.00" fill="1" layer="4" shape="60,10 100,10 100,50 60,50"/>
+</shapes>
