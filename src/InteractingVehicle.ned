@@ -21,5 +21,6 @@ import org.car2x.veins.modules.application.ieee80211p.DemoBaseApplLayer;
 simple InteractingVehicle extends DemoBaseApplLayer like IBaseApplLayer {   
     parameters:
         @class(InteractingVehicle);
-
+        double psInterval = 1s @unit(s); //the intervall between 2 ps messages
+        //sendBeacons = true;
 }

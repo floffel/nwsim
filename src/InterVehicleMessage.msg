@@ -25,5 +25,5 @@ class noncobject veins::Coord;
 packet InterVehicleMessage extends veins::DemoSafetyMessage {
 	string vehicleName;
 	veins::Coord position;
-	//double speed;
+	double speed;
 }

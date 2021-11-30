@@ -38,11 +38,17 @@ class InteractingVehicle : public DemoBaseApplLayer {
 
 public:
 
+    ~InteractingVehicle();
+
     /**
      * Finish hook. finish() is called after end of simulation if it
      * terminated without error.
      */
     virtual void finish();
+
+    enum InteractingVehicleMessageKinds {
+        SEND_PS_EVT
+    };
 
 protected:
 
@@ -64,14 +70,14 @@ protected:
     virtual void handleSelfMsg(cMessage* msg);
 
     /**
-     * Handles message generation
+     * Handles message population
      */
-    virtual InterVehicleMessage* generateMsg();
+    //virtual InterVehicleMessage* populateMsg();
 
-    /**
-     * Handles message sending
-     */
-    virtual void sendMsg(InterVehicleMessage* msg);
+    veins::TraCIMobility* mobility;
+    simtime_t psInterval;
+    /* messages for periodic events, namly the position/speed update transmissions */
+    cMessage* sendPSEvt;
 };
 
 #endif

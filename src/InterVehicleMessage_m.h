@@ -32,7 +32,7 @@
  * {
  *     string vehicleName;
  *     veins::Coord position;
- * 	//double speed;
+ *     double speed;
  * }
  * </pre>
  */
@@ -41,6 +41,7 @@ class InterVehicleMessage : public ::veins::DemoSafetyMessage
   protected:
     ::omnetpp::opp_string vehicleName;
     veins::Coord position;
+    double speed;
 
   private:
     void copy(const InterVehicleMessage& other);
@@ -64,6 +65,8 @@ class InterVehicleMessage : public ::veins::DemoSafetyMessage
     virtual veins::Coord& getPosition();
     virtual const veins::Coord& getPosition() const {return const_cast<InterVehicleMessage*>(this)->getPosition();}
     virtual void setPosition(const veins::Coord& position);
+    virtual double getSpeed() const;
+    virtual void setSpeed(double speed);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const InterVehicleMessage& obj) {obj.parsimPack(b);}

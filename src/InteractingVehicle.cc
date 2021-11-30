@@ -17,15 +17,29 @@
 
 Define_Module(InteractingVehicle);
 
+InteractingVehicle::~InteractingVehicle() {
+    cancelAndDelete(sendPSEvt);
+}
+
 void InteractingVehicle::initialize(int stage)
 {
     DemoBaseApplLayer::initialize(stage);
     if (stage == 0) {
         // Initializing members and pointers of your application goes here
-        sendMsg(generateMsg());
+
+        // initialize pointers to other modules
+        if (veins::FindModule<veins::TraCIMobility*>::findSubModule(getParentModule())) {
+            mobility = veins::TraCIMobilityAccess().get(getParentModule());
+        }
+
+        psInterval = par("psInterval");
+        EV << "psInterval: " << psInterval << std::endl;
+        sendPSEvt = new cMessage("PSEvt", SEND_PS_EVT);
     }
     else if (stage == 1) {
         // Initializing members that require initialized other modules goes here
+        simtime_t randomOffset = dblrand() * psInterval;
+        scheduleAt(simTime() + randomOffset, sendPSEvt);
         // globalStats = FindModule<GlobalStatistics*>::findSubModule(getParentModule()->getParentModule());
     }
 }
@@ -42,7 +56,7 @@ void InteractingVehicle::handleMessage(cMessage* msg)
     // put handling of messages from other nodes here
 
     if(InterVehicleMessage *ivmsg = check_and_cast<InterVehicleMessage *>(msg))
-        EV << "Got a new InterVehicleMessage from " << ivmsg->getName() << "with position " << ivmsg->getPosition() << ", Speed: " << ivmsg->getSenderSpeed() << std::endl;
+        EV << "Got a new InterVehicleMessage from " << ivmsg->getName() << "with position " << ivmsg->getPosition() << ", Speed: " << ivmsg->getSpeed() << std::endl;
 }
 
 void InteractingVehicle::finish()
@@ -53,37 +67,32 @@ void InteractingVehicle::finish()
 
 void InteractingVehicle::handleSelfMsg(cMessage* msg)
 {
-    EV << "new self message" << std::endl;
-    DemoBaseApplLayer::handleSelfMsg(msg);
     // this method is for self messages (mostly timers)
     // it is important to call the DemoBaseApplLayer function for BSM and WSM transmission
+    //DemoBaseApplLayer::handleSelfMsg(msg); this will schedule a bacon message, which interferes with the InterVehicleMessage
+
+    switch (msg->getKind()) {
+        case SEND_PS_EVT: {
+            //sendDown(generateMsg());
+            // todo: we have to send the psEvtMessage down, not a new one
+
+            InterVehicleMessage* wiv = new InterVehicleMessage(getParentModule()->getFullName());
+
+            auto position = mobility->getPositionAt(simTime()); // DemoBaseApplLayer::curPosition
+            auto speed = mobility->getSpeed(); // DemoBaseApplLayer::curSpeed
+
+            //auto position = DemoBaseApplLayer::curPosition;
+            //auto speed = DemoBaseApplLayer::curSpeed;
+
+            wiv->setPosition(position);
+            wiv->setSpeed(speed);
+            wiv->setChannelNumber(static_cast<int>(veins::Channel::cch));
+
+            sendDown(wiv);
+
+            scheduleAt(simTime() + psInterval, sendPSEvt);
+            break;
+        }
+    }
+
 }
-
-InterVehicleMessage* InteractingVehicle::generateMsg() {
-
-    InterVehicleMessage* msg = new InterVehicleMessage(getParentModule()->getFullName());
-
-    //const auto mobility = TraCIMobilityAccess().get(getParentModule());
-
-    //auto position = mobility->getPositionAt(simTime()); // DemoBaseApplLayer::curPosition
-    //auto speed = mobility->getCurrentSpeed(); // DemoBaseApplLayer::curSpeed
-
-    auto position = DemoBaseApplLayer::curPosition;
-    auto speed = DemoBaseApplLayer::curSpeed;
-
-
-    EV << "adding with current position: " << position << std::endl;
-    EV << "adding with current speed: " << speed << std::endl;
-    msg->setSenderPos(position);
-    msg->setSenderSpeed(speed);
-    msg->setChannelNumber(static_cast<int>(veins::Channel::cch));
-    return msg;
-}
-
-void InteractingVehicle::sendMsg(InterVehicleMessage* msg) {
-    EV << "Sending message!";
-    //send(msg, "lowerLayerOut");
-    //DemoBaseApplLayer::handleLowerMsg(msg);
-    sendDown(msg);
-}
-
