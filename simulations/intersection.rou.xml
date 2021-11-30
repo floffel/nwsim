@@ -4,7 +4,7 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <output>
-        <output-file value="/home/veins/uni/tutorials/intersection.net.xml"/>
+        <output-file value="intersection.net.xml"/>
     </output>
 
     <processing>
@@ -16,7 +16,7 @@
     </junctions>
 
     <netedit>
-        <route-files value="/home/veins/uni/tutorials/intersection.rou.xml"/>
+        <route-files value="intersection.rou.xml"/>
     </netedit>
 
     <report>
@@ -30,6 +30,6 @@
     <route edges="-gneE2 gneE1" color="yellow" id="route_0"/>
     <route edges="gneE0 gneE1" color="yellow" id="route_1"/>
 
-    <flow id="fl_right_to_left" color="255,90,0" route="route_0" probability="0.7"/> 
-    <flow id="fl_top_to_left" color="255,90,0" route="route_1" probability="0.7"/>
+    <flow id="fl_right_to_left" color="255,90,0" route="route_0" probability="0.3"/> 
+    <flow id="fl_top_to_left" color="255,90,0" route="route_1" probability="0.2"/>
 </routes>

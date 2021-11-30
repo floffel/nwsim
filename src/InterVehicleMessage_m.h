@@ -32,6 +32,7 @@
  * {
  *     string vehicleName;
  *     veins::Coord position;
+ * 	//double speed;
  * }
  * </pre>
  */

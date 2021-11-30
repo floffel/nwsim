@@ -4,8 +4,8 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <output>
-        <output-file value="/home/veins/uni/tutorials/intersection.net.xml"/>
-        <junctions.join-output value="/home/veins/uni/tutorials/intersection.nod.xml"/>
+        <output-file value="intersection.net.xml"/>
+        <junctions.join-output value="intersection.nod.xml"/>
     </output>
 
     <processing>
@@ -17,7 +17,7 @@
     </junctions>
 
     <netedit>
-        <route-files value="/home/veins/uni/tutorials/intersection.rou.xml"/>
+        <route-files value="intersection.rou.xml"/>
     </netedit>
 
     <report>

@@ -22,6 +22,7 @@ void InteractingVehicle::initialize(int stage)
     DemoBaseApplLayer::initialize(stage);
     if (stage == 0) {
         // Initializing members and pointers of your application goes here
+        sendMsg(generateMsg());
     }
     else if (stage == 1) {
         // Initializing members that require initialized other modules goes here
@@ -34,9 +35,14 @@ void InteractingVehicle::handleMessage(cMessage* msg)
     // handle self messages (e.g. timers) in a separate methods
     if (msg->isSelfMessage()) {
         handleSelfMsg(msg);
+        return;
     }
+    EV << "new message" << std::endl;
 
     // put handling of messages from other nodes here
+
+    if(InterVehicleMessage *ivmsg = check_and_cast<InterVehicleMessage *>(msg))
+        EV << "Got a new InterVehicleMessage from " << ivmsg->getName() << "with position " << ivmsg->getPosition() << ", Speed: " << ivmsg->getSenderSpeed() << std::endl;
 }
 
 void InteractingVehicle::finish()
@@ -47,8 +53,37 @@ void InteractingVehicle::finish()
 
 void InteractingVehicle::handleSelfMsg(cMessage* msg)
 {
+    EV << "new self message" << std::endl;
     DemoBaseApplLayer::handleSelfMsg(msg);
     // this method is for self messages (mostly timers)
     // it is important to call the DemoBaseApplLayer function for BSM and WSM transmission
+}
+
+InterVehicleMessage* InteractingVehicle::generateMsg() {
+
+    InterVehicleMessage* msg = new InterVehicleMessage(getParentModule()->getFullName());
+
+    //const auto mobility = TraCIMobilityAccess().get(getParentModule());
+
+    //auto position = mobility->getPositionAt(simTime()); // DemoBaseApplLayer::curPosition
+    //auto speed = mobility->getCurrentSpeed(); // DemoBaseApplLayer::curSpeed
+
+    auto position = DemoBaseApplLayer::curPosition;
+    auto speed = DemoBaseApplLayer::curSpeed;
+
+
+    EV << "adding with current position: " << position << std::endl;
+    EV << "adding with current speed: " << speed << std::endl;
+    msg->setSenderPos(position);
+    msg->setSenderSpeed(speed);
+    msg->setChannelNumber(static_cast<int>(veins::Channel::cch));
+    return msg;
+}
+
+void InteractingVehicle::sendMsg(InterVehicleMessage* msg) {
+    EV << "Sending message!";
+    //send(msg, "lowerLayerOut");
+    //DemoBaseApplLayer::handleLowerMsg(msg);
+    sendDown(msg);
 }
 

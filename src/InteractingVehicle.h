@@ -18,6 +18,10 @@
 
 #include <omnetpp.h>
 #include "veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
+#include "InterVehicleMessage_m.h"
+#include "veins/modules/mobility/traci/TraCIMobility.h"
+#include "veins/modules/mobility/traci/TraCICommandInterface.h"
+
 
 using veins::Coord;
 using veins::DemoBaseApplLayer;
@@ -59,6 +63,15 @@ protected:
      */
     virtual void handleSelfMsg(cMessage* msg);
 
+    /**
+     * Handles message generation
+     */
+    virtual InterVehicleMessage* generateMsg();
+
+    /**
+     * Handles message sending
+     */
+    virtual void sendMsg(InterVehicleMessage* msg);
 };
 
 #endif
