@@ -16,8 +16,9 @@
 #ifndef __INTERACTING_VEHICLE_H_
 #define __INTERACTING_VEHICLE_H_
 
-#include <tuple>
 #include <vector>
+#include <tuple>
+#include <map>
 #include <omnetpp.h>
 #include "veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
 #include "InterVehicleMessage_m.h"
@@ -101,10 +102,20 @@ protected:
     // This simulates a perfect world, where a road is ending as soon as a crossing occours
     // in the real world, we would have to determine all road-crossings first
     // as I don't know how far this project will go, it will already be a vector, so not too much additional work would be needed
-    std::vector<std::tuple<point3d, simtime_t_cref>> potential_meeting_points;
+    //std::vector<std::tuple<point3d, simtime_t_cref>> potential_meeting_points;
 
-    // meetings holds <name, coordinates, time> the calculated meetings between two cars which would normally result in a crash
-    std::vector<std::tuple<std::string, point3d, simtime_t_cref>> meetings;
+    const double same_point_radius_threshold = .01;
+    const simtime_t same_time_threshold = 2;
+
+
+    veins::Coord enemy_last_point;
+    veins::Coord my_last_point;
+
+    // seen is a recorder of vehicles, at which point they where seen and at which speed
+    std::map<std::string, std::vector<std::pair<veins::Coord, double>>> seen;
+
+    // meeting_points maps the name of the car too meet with <coordinates, time> the calculated meetings between two cars which would normally result in a crash
+    std::map<std::string, std::pair<veins::Coord, simtime_t>> meeting_points;
 
 
     veins::TraCIMobility* mobility;
