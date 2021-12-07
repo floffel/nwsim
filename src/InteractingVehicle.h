@@ -25,15 +25,8 @@
 #include "veins/modules/mobility/traci/TraCIMobility.h"
 #include "veins/modules/mobility/traci/TraCICommandInterface.h"
 
-
 using veins::Coord;
 using veins::DemoBaseApplLayer;
-
-
-// would be cool to be a real class, like in opengl
-typedef std::tuple<double, double, double> vec3d;
-typedef std::tuple<double, double, double> point3d;
-
 
 /**
  * @brief A class for vehicles in SUMO simulations.
@@ -47,16 +40,16 @@ class InteractingVehicle : public DemoBaseApplLayer {
 
 public:
 
-    ~InteractingVehicle();
-
     /**
      * Finish hook. finish() is called after end of simulation if it
      * terminated without error.
      */
     virtual void finish();
 
+    // we have to take different ids becourse of DemoBaseApplLayer, so we'll go from 999 to 0
     enum InteractingVehicleMessageKinds {
-        SEND_PS_EVT
+        SEND_PS_EVT = 999,
+        SEND_MEETING_ANNOUNCEMENT_EVT = 998
     };
 
 protected:
@@ -78,59 +71,36 @@ protected:
      */
     virtual void handleSelfMsg(cMessage* msg);
 
-    // vp=vector start point
-    // v=vector
-    // ip=intersection point
-    virtual double calculate_intersection_multiplicator(veins::Coord vp, veins::Coord v, veins::Coord ip);
+    /**
+     * Gets the next time a meeting could take place
+     */
+    virtual simtime_t getNextMeetingTime();
 
     /**
-     * Handles message population
+     * Announces a selfMessage for handling the meeting
      */
-    //virtual InterVehicleMessage* populateMsg();
-
-    // Deprecated, too complex:
-        // vectors, the car will drive in the future
-        // todo: delete the already driven vectors?
-        // holds <vector, start_time, end_time>
-        //std::vector<std::tuple<vec3d, simtime_t_cref>> drive_positions_time;
-        // holds the possible crash/meeting carnames, positions and times
-        //std::vector<std::tuple<std::string, vec3d, simtime_t_cref>> potencial_meets;
-
-        // wir haben für die berechnung der position nur die koordinaten und speed,
-        // also müssen wir daraus die straße ableiten, wenn möglich (ansonsten den vektor nehmen der gegeben ist)
-        // und so die meeting points erstellen
-        // da es so nur 2 punkte gibt, müssen wir also checken, ob wir uns treffen, wenn wir den vektor länger machen
-        // wenn nicht -> gut, wenn ja -> meeting point
-
-    // Annahme: Es kann sich nur immer an Kreuzungen, e.g. am Ende einer Straße getroffen werden
-    // potential_meeting_points holds the end of the street as a crossing and therefore a potential meeting point, and the time it will be there
-    // This simulates a perfect world, where a road is ending as soon as a crossing occours
-    // in the real world, we would have to determine all road-crossings first
-    // as I don't know how far this project will go, it will already be a vector, so not too much additional work would be needed
-    //std::vector<std::tuple<point3d, simtime_t_cref>> potential_meeting_points;
-
-    const double same_point_radius_threshold = .01;
-    const simtime_t same_time_threshold = 2;
-
+    virtual void announceNextMeeting();
 
     std::map<std::string, veins::Coord> enemys_last_position;
     veins::Coord my_last_position;
 
-    // seen is a recorder of vehicles, at which point they where seen and at which speed
-    std::map<std::string, std::vector<std::pair<veins::Coord, double>>> seen;
+    // TODO: parameter...
+    const double critical_meeting_duration = 5;
 
-    // meeting_points maps the name of the car too meet with <coordinates, time> the calculated meetings between two cars which would normally result in a crash
-    std::map<std::string, std::pair<veins::Coord, simtime_t>> meeting_points;
-
+    // hold the possible meeting messages to trigger a warning etc.
+    //std::map<std::string, cMessage*> meeting_messages;
+    // bool holds the "was warned already", 3sec before
+    std::map<std::string, simtime_t> meetings;
 
     veins::TraCIMobility* mobility;
     veins::TraCICommandInterface* traci;
     veins::TraCICommandInterface::Vehicle* traciVehicle;
 
-
     simtime_t psInterval;
     /* messages for periodic events, namly the position/speed update transmissions */
     cMessage* sendPSEvt;
+    /* messages for announcing (potential) meetings and for triggering actions */
+    cMessage* sendMeetingAnnouncementEvt;
 };
 
 #endif

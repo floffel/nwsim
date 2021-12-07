@@ -47,7 +47,8 @@
   /home/veins/src/veins/src/veins/base/utils/EnumBitset.h \
   /home/veins/src/veins/src/veins/modules/mobility/traci/TraCIRegionOfInterest.h \
   /home/veins/src/veins/src/veins/modules/mobility/traci/TraCICommandInterface.h \
-  /home/veins/src/veins/src/veins/modules/world/traci/trafficLight/TraCITrafficLightProgram.h
+  /home/veins/src/veins/src/veins/modules/world/traci/trafficLight/TraCITrafficLightProgram.h \
+  InterVehicleMessage_m.h
 
 InteractingVehicle.h:
 
@@ -148,3 +149,5 @@ InteractingVehicle.h:
 /home/veins/src/veins/src/veins/modules/mobility/traci/TraCICommandInterface.h:
 
 /home/veins/src/veins/src/veins/modules/world/traci/trafficLight/TraCITrafficLightProgram.h:
+
+InterVehicleMessage_m.h:
