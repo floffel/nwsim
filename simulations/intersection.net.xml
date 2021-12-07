@@ -21,25 +21,25 @@
     </edge>
     <edge id=":point_middle_5" function="internal">
         <lane id=":point_middle_5_0" index="0" speed="13.73" length="17.52" shape="-5.33,-1.60 -2.16,-1.05 1.36,0.59 5.22,3.33 9.42,7.16"/>
-    </edge>
+    </edge>    
 
-    <edge id="street_left_to_middle" from="point_left" to="point_middle" priority="-1" length="140.00">
-        <lane id="street_left_to_middle_0" index="0" speed="13.89" length="140.00" shape="-1400.00,-1.60 -5.33,-1.60"/>
+    <edge id="street_left_to_middle" from="point_left" to="point_middle" priority="-1" length="1400.00">
+        <lane id="street_left_to_middle_0" index="0" speed="50" length="1400.00" shape="-1400.00,-1.60 -5.33,-1.60"/>
     </edge>
-    <edge id="street_middle_to_left" from="point_middle" to="point_left" priority="-1" length="140.00">
-        <lane id="street_middle_to_left_0" index="0" speed="13.89" length="140.00" shape="-5.33,1.60 -1400.00,1.60"/>
+    <edge id="street_middle_to_left" from="point_middle" to="point_left" priority="-1" length="1400.00">
+        <lane id="street_middle_to_left_0" index="0" speed="50" length="1400.00" shape="-5.33,1.60 -1400.00,1.60"/>
     </edge>
-    <edge id="street_middle_to_right" from="point_middle" to="point_right" priority="-1" length="140.00">
-        <lane id="street_middle_to_right_0" index="0" speed="13.89" length="140.00" shape="11.73,-1.60 1400.00,-1.60"/>
+    <edge id="street_middle_to_right" from="point_middle" to="point_right" priority="-1" length="1400.00">
+        <lane id="street_middle_to_right_0" index="0" speed="50" length="1400.00" shape="11.73,-1.60 1400.00,-1.60"/>
     </edge>
-    <edge id="street_middle_to_top" from="point_middle" to="point_top" priority="-1" length="140.00">
-        <lane id="street_middle_to_top_0" index="0" speed="13.89" length="140.00" shape="9.42,7.16 991.13,988.87"/>
+    <edge id="street_middle_to_top" from="point_middle" to="point_top" priority="-1" length="1400.00">
+        <lane id="street_middle_to_top_0" index="0" speed="50" length="1400.00" shape="9.42,7.16 991.13,988.87"/>
     </edge>
-    <edge id="street_right_to_middle" from="point_right" to="point_middle" priority="-1" length="140.00">
-        <lane id="street_right_to_middle_0" index="0" speed="13.89" length="140.00" shape="1400.00,1.60 11.73,1.60"/>
+    <edge id="street_right_to_middle" from="point_right" to="point_middle" priority="-1" length="1400.00">
+        <lane id="street_right_to_middle_0" index="0" speed="50" length="1400.00" shape="1400.00,1.60 11.73,1.60"/>
     </edge>
-    <edge id="street_top_to_middle" from="point_top" to="point_middle" priority="-1" length="140.00">
-        <lane id="street_top_to_middle_0" index="0" speed="13.89" length="140.00" shape="988.87,991.13 7.16,9.42"/>
+    <edge id="street_top_to_middle" from="point_top" to="point_middle" priority="-1" length="1400.00">
+        <lane id="street_top_to_middle_0" index="0" speed="50" length="1400.00" shape="988.87,991.13 7.16,9.42"/>
     </edge>
 
     <junction id="point_left" type="dead_end" x="-1400.00" y="0.00" incLanes="street_middle_to_left_0" intLanes="" shape="-1400.00,0.00 -1400.00,3.20 -1400.00,0.00"/>

@@ -78,6 +78,11 @@ protected:
      */
     virtual void handleSelfMsg(cMessage* msg);
 
+    // vp=vector start point
+    // v=vector
+    // ip=intersection point
+    virtual double calculate_intersection_multiplicator(veins::Coord vp, veins::Coord v, veins::Coord ip);
+
     /**
      * Handles message population
      */
@@ -108,8 +113,8 @@ protected:
     const simtime_t same_time_threshold = 2;
 
 
-    veins::Coord enemy_last_point;
-    veins::Coord my_last_point;
+    std::map<std::string, veins::Coord> enemys_last_position;
+    veins::Coord my_last_position;
 
     // seen is a recorder of vehicles, at which point they where seen and at which speed
     std::map<std::string, std::vector<std::pair<veins::Coord, double>>> seen;
