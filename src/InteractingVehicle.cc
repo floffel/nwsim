@@ -38,13 +38,16 @@ void InteractingVehicle::initialize(int stage)
         }
 
         // get parameters
+        breakDuration = par("breakDuration");
         meetWarnBefore = par("meetWarnBefore");
         meetBreakBefore = par("meetBreakBefore");
         criticalMeetingDuration = par("criticalMeetingDuration");
         psInterval = par("psInterval");
         sendPSEvt = new cMessage("PSEvt", SEND_PS_EVT);
-        sendMeetingAnnouncementEvt = new cMessage("MeetingAnnouncementEvt", SEND_MEETING_ANNOUNCEMENT_EVT);
         sendDriveAgainEvt = new cMessage("DriveAgainEvt", SEND_DRIVE_AGAIN_EVT);
+
+        sendMWEvt = new cMessage("MeetingWarningEvt", SEND_MW_EVT);
+        sendMBEvt = new cMessage("MeetingBreakingEvt", SEND_MB_EVT);
     }
     else if (stage == 1) {
         // Initializing members that require initialized other modules goes here
@@ -92,7 +95,7 @@ void InteractingVehicle::handleMessage(cMessage* msg)
         // cancelation requirements
         if(enemy_last_pos == veins::Coord().ZERO || // no last position
            //my_current_speed == 0 || enemy_current_speed == 0 || // would give false positives/negatives
-           .2 > std::abs(my_vec.twoDimensionalCrossProduct(enemy_vec)) // parallel
+           .1 > std::abs(my_vec.twoDimensionalCrossProduct(enemy_vec)) // parallel
            ) {
             enemys_last_position[ivmsg->getName()] = enemy_current_pos;
             my_last_position = my_current_pos;
@@ -100,22 +103,24 @@ void InteractingVehicle::handleMessage(cMessage* msg)
             return;
         }
 
+        EV << "[" << getParentModule()->getFullName() << "]" << "not the same, cross product gives: " << my_vec.twoDimensionalCrossProduct(enemy_vec);
+
         { // calculate intersection, see https://stackoverflow.com/a/565282
             double my_n = (enemy_current_pos - my_current_pos).twoDimensionalCrossProduct(enemy_vec) / my_vec.twoDimensionalCrossProduct(enemy_vec);
-            double enemy_n = (enemy_current_pos - my_current_pos).twoDimensionalCrossProduct(my_vec) / enemy_vec.twoDimensionalCrossProduct(my_vec);
+            double enemy_n = (my_current_pos - enemy_current_pos).twoDimensionalCrossProduct(my_vec) / enemy_vec.twoDimensionalCrossProduct(my_vec);
 
             if(my_n < 0 || enemy_n < 0) // seems we'd have to drive backwards to reach that point...
                 return;
 
             EV << "my position for the meeting is " << my_current_pos + (my_vec * my_n) << std::endl
-               << "  enemys position is " << my_current_pos + (my_vec * my_n) << std::endl;
+               << "  enemys position is " << my_current_pos + (my_vec * my_n) << std::endl
+               << "my n is: " << my_n << "enemys n is: " << enemy_n << std::endl;
 
             meeting_point = my_current_pos + (my_vec * my_n);
         }
 
 
         { // calculate the meeting time
-
             // cant use true, maybe because its not perfectly "on their route"? Todo: fix this..
             double dist_my = traci->getDistance(my_current_pos, meeting_point, false);
             double dist_enemy = traci->getDistance(enemy_current_pos, meeting_point, false);
@@ -149,26 +154,42 @@ std::pair<std::string, simtime_t> InteractingVehicle::getNextMeetingTime() {
 void InteractingVehicle::announceNextMeeting() {
     simtime_t time = getNextMeetingTime().second;
 
-    if(sendMeetingAnnouncementEvt->isScheduled())
-        cancelEvent(sendMeetingAnnouncementEvt);
+    if(sendMWEvt->isScheduled())
+        cancelEvent(sendMWEvt);
+    if(sendMBEvt->isScheduled())
+        cancelEvent(sendMBEvt);
 
     if(time == simtime_t::getMaxTime())
         return;
 
-    simtime_t schedulingTime;
+    simtime_t schedulingWarnTime = time - meetWarnBefore;
+    simtime_t schedulingBreakTime = time - meetBreakBefore;
 
-    if((simTime() - time) >= meetWarnBefore) // send it as a warning message, if we have time
-        schedulingTime = time - meetWarnBefore;
-    else // send as an automatic break message
-        schedulingTime = time - meetBreakBefore;
+    if(simTime() > schedulingWarnTime && simTime() < time) // should have warned earlier
+        scheduleAt(simTime(), sendMWEvt);
+    else if(simTime() < schedulingWarnTime) // warn correctly
+        scheduleAt(schedulingWarnTime, sendMWEvt);
 
-    if(schedulingTime < simTime())
-        return; // maybe, as a last resort, do schedulingTime = simTime()
+    if(simTime() > schedulingBreakTime && simTime() < time) { // should have breaked earlier
+        // TODO: this three lines are doubled... bad coding style i guess, fix it...
+        if(sendDriveAgainEvt->isScheduled())
+            cancelEvent(sendDriveAgainEvt);
+        scheduleAt(schedulingBreakTime + breakDuration, sendDriveAgainEvt);
+
+        scheduleAt(simTime(), sendMBEvt);
+    }
+    else if(simTime() < schedulingBreakTime) { // warn correctly
+        if(sendDriveAgainEvt->isScheduled())
+            cancelEvent(sendDriveAgainEvt);
+        scheduleAt(schedulingBreakTime + breakDuration, sendDriveAgainEvt);
+
+        scheduleAt(schedulingBreakTime, sendMBEvt);
+    }
 
     //cancelEvent(sendDriveAgainEvt);
 
-    EV << "+++++ scheduling meeting @" << schedulingTime << std::endl;
-    scheduleAt(schedulingTime, sendMeetingAnnouncementEvt);
+    //EV << "+++++ scheduling meeting @" << schedulingTime << std::endl;
+    //scheduleAt(schedulingTime, sendMeetingAnnouncementEvt);
 }
 
 void InteractingVehicle::finish()
@@ -205,46 +226,40 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             scheduleAt(simTime() + psInterval, sendPSEvt);
             break;
         }
-        case SEND_MEETING_ANNOUNCEMENT_EVT: {
+        case SEND_MW_EVT: { // Warning triggered
+            findHost()->bubble("Warning!");
+            getParentModule()->getDisplayString().setTagArg("i", 1, "red");
+            break;
+        }
+        case SEND_MB_EVT: { // Breaking triggered
             auto next_meeting = getNextMeetingTime();
 
-            if(next_meeting.second == simtime_t::getMaxTime())
+            if(next_meeting.second == simtime_t::getMaxTime()) // meeting was deleted
                 break;
 
-            cancelEvent(sendDriveAgainEvt);
+            veins::Coord my_current_pos = mobility->getPositionAt(simTime());
+            double d = ((enemys_last_position[next_meeting.first] - my_last_position).twoDimensionalCrossProduct(my_current_pos - my_last_position))/(my_current_pos - my_last_position).length();
+            EV << "d is: " << d << std::endl;
 
-            if( (simTime() - next_meeting.second) <= meetBreakBefore) {
-                // rotes icon löschen!
+            if(d > 0) { // enemy is on the right, so we have to break
+                EV << getParentModule()->getFullName() << ": Breaking in favor of enemy car " << next_meeting.first << std::endl;
+                findHost()->bubble("Breaking!");
+                traciVehicle->setSpeed(0);
                 getParentModule()->getDisplayString().setTagArg("i", 1, "grey");
 
-                // ich habe meine gerade gegeben, durch meine position + meinen vektor,
-                //   abstand zum punkt berechnen, wenn positiv -> kommt von rechts
-                //   wenn negativ -> kommt von links
-                veins::Coord my_current_pos = mobility->getPositionAt(simTime());
-                double d = ((my_last_position - enemys_last_position[next_meeting.first]).twoDimensionalCrossProduct(my_current_pos - my_last_position))/(my_current_pos - my_last_position).length();
-                EV << "d is: " << d << std::endl;
-
-                if(d < 0) { // enemy is on the right, so we have to break
-                    EV << getParentModule()->getFullName() << ": Breaking in favor of enemy car " << next_meeting.first << std::endl;
-                    findHost()->bubble("Breaking!");
-                    traciVehicle->setSpeed(0);
-
-                    scheduleAt(simTime() + 7, sendDriveAgainEvt); // TODO: 3 should be a parameter
-                }
-
-                // hier muss ich check, ob der enemy von rechts kommt, wenn ja -> bremsen
-                // dann natürlich noch einen timer/message setzen, um wieder loszufahren, wenn er weg ist...
-
-            } else if( (simTime() - next_meeting.second) <= meetWarnBefore) {
-                findHost()->bubble("Warning!");
-                getParentModule()->getDisplayString().setTagArg("i", 1, "red");
+                meetings.erase(next_meeting.first); // meeting over, so we can remove it from the list
+                //announceNextMeeting(); // endlosschleife
             }
 
             break;
         }
         case SEND_DRIVE_AGAIN_EVT: {
+            // TODO: check if the way is clear (e.g. calling getNextMeetingTime)
             // TODO: get the main speed for the track?
+            findHost()->bubble("Driving");
+            getParentModule()->getDisplayString().setTagArg("i", 1, "green");
             traciVehicle->setSpeed(50);
+            announceNextMeeting();
             break;
         }
     }

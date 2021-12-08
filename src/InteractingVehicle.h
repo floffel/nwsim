@@ -49,8 +49,9 @@ public:
     // we have to take different ids becourse of DemoBaseApplLayer, so we'll go from 999 to 0
     enum InteractingVehicleMessageKinds {
         SEND_PS_EVT = 999,
-        SEND_MEETING_ANNOUNCEMENT_EVT = 998,
-        SEND_DRIVE_AGAIN_EVT = 997
+        SEND_MW_EVT = 998,
+        SEND_MB_EVT = 997,
+        SEND_DRIVE_AGAIN_EVT = 996
     };
 
 protected:
@@ -99,15 +100,19 @@ protected:
     /* Duration a car is before to meet when a break shall be initiated */
     simtime_t meetBreakBefore;
 
-    /* In a perfect world, this would be a radius, no time */
     double criticalMeetingDuration;
 
+    /* Duration before a car shall resume after a meeting */
+    simtime_t breakDuration;
     /* Interval for PS Messages*/
     simtime_t psInterval;
+
     /* messages for periodic events, namly the position/speed update transmissions */
     cMessage* sendPSEvt;
-    /* messages for announcing (potential) meetings and for triggering actions */
-    cMessage* sendMeetingAnnouncementEvt;
+    /* messages for MeetingWarning */
+    cMessage* sendMWEvt;
+    /* messages for MeetingBreaking */
+    cMessage* sendMBEvt;
     /* messages for announcing (potential) meetings and for triggering actions */
     cMessage* sendDriveAgainEvt;
 };
