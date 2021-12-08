@@ -49,7 +49,8 @@ public:
     // we have to take different ids becourse of DemoBaseApplLayer, so we'll go from 999 to 0
     enum InteractingVehicleMessageKinds {
         SEND_PS_EVT = 999,
-        SEND_MEETING_ANNOUNCEMENT_EVT = 998
+        SEND_MEETING_ANNOUNCEMENT_EVT = 998,
+        SEND_DRIVE_AGAIN_EVT = 997
     };
 
 protected:
@@ -74,7 +75,7 @@ protected:
     /**
      * Gets the next time a meeting could take place
      */
-    virtual simtime_t getNextMeetingTime();
+    virtual std::pair<std::string, simtime_t> getNextMeetingTime();
 
     /**
      * Announces a selfMessage for handling the meeting
@@ -83,9 +84,6 @@ protected:
 
     std::map<std::string, veins::Coord> enemys_last_position;
     veins::Coord my_last_position;
-
-    // TODO: parameter...
-    const double critical_meeting_duration = 5;
 
     // hold the possible meeting messages to trigger a warning etc.
     //std::map<std::string, cMessage*> meeting_messages;
@@ -96,11 +94,22 @@ protected:
     veins::TraCICommandInterface* traci;
     veins::TraCICommandInterface::Vehicle* traciVehicle;
 
+    /* Duration a car has before to meet when a warning shall appear */
+    simtime_t meetWarnBefore;
+    /* Duration a car is before to meet when a break shall be initiated */
+    simtime_t meetBreakBefore;
+
+    /* In a perfect world, this would be a radius, no time */
+    double criticalMeetingDuration;
+
+    /* Interval for PS Messages*/
     simtime_t psInterval;
     /* messages for periodic events, namly the position/speed update transmissions */
     cMessage* sendPSEvt;
     /* messages for announcing (potential) meetings and for triggering actions */
     cMessage* sendMeetingAnnouncementEvt;
+    /* messages for announcing (potential) meetings and for triggering actions */
+    cMessage* sendDriveAgainEvt;
 };
 
 #endif

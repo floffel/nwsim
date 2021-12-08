@@ -1,14 +1,14 @@
 version 2
-run General-0-20211207-20:00:40-24894
+run General-0-20211208-13:45:15-9319
 attr configname General
-attr datetime 20211207-20:00:40
+attr datetime 20211208-13:45:15
 attr experiment General
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network org.car2x.veins.nodes.Scenario
-attr processid 24894
+attr processid 9319
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -51,34 +51,34 @@ param *.obstacles.obstacles "xmldoc(\"config.xml\", \"//AnalogueModel[@type='Sim
 
 scalar Scenario.node[0].appl generatedWSMs 0
 scalar Scenario.node[0].appl receivedWSMs 0
-scalar Scenario.node[0].appl generatedBSMs 22
+scalar Scenario.node[0].appl generatedBSMs 11
 scalar Scenario.node[0].appl receivedBSMs 0
 scalar Scenario.node[0].appl generatedWSAs 0
 scalar Scenario.node[0].appl receivedWSAs 0
-scalar Scenario.node[0].nic.phy80211p busyTime 0.00010472727272727
+scalar Scenario.node[0].nic.phy80211p busyTime 5.0181818181818e-05
 scalar Scenario.node[0].nic.mac1609_4 ReceivedUnicastPackets 0
-scalar Scenario.node[0].nic.mac1609_4 ReceivedBroadcasts 42
-scalar Scenario.node[0].nic.mac1609_4 SentPackets 22
+scalar Scenario.node[0].nic.mac1609_4 ReceivedBroadcasts 20
+scalar Scenario.node[0].nic.mac1609_4 SentPackets 11
 scalar Scenario.node[0].nic.mac1609_4 SentAcknowledgements 0
 scalar Scenario.node[0].nic.mac1609_4 RetriesExceeded 0
-scalar Scenario.node[0].nic.mac1609_4 SNIRLostPackets 6
+scalar Scenario.node[0].nic.mac1609_4 SNIRLostPackets 3
 scalar Scenario.node[0].nic.mac1609_4 RXTXLostPackets 0
-scalar Scenario.node[0].nic.mac1609_4 TotalLostPackets 6
+scalar Scenario.node[0].nic.mac1609_4 TotalLostPackets 3
 scalar Scenario.node[0].nic.mac1609_4 DroppedPacketsInMac 0
 scalar Scenario.node[0].nic.mac1609_4 TooLittleTime 0
-scalar Scenario.node[0].nic.mac1609_4 TimesIntoBackoff 22
-scalar Scenario.node[0].nic.mac1609_4 SlotsBackoff 31
+scalar Scenario.node[0].nic.mac1609_4 TimesIntoBackoff 11
+scalar Scenario.node[0].nic.mac1609_4 SlotsBackoff 19
 scalar Scenario.node[0].nic.mac1609_4 NumInternalContention 0
-scalar Scenario.node[0].nic.mac1609_4 totalBusyTime 0.003382
+scalar Scenario.node[0].nic.mac1609_4 totalBusyTime 0.001643
 scalar Scenario.node[0].nic.mac1609_4 retriesExceeded:count 0
 attr source org_car2x_veins_modules_mac_sigRetriesExceeded
 scalar Scenario.node[0].nic.mac1609_4 sentAcks:count 0
 attr source org_car2x_veins_modules_mac_sigSentAck
-scalar Scenario.node[0].nic.mac1609_4 sentPackets:count 22
+scalar Scenario.node[0].nic.mac1609_4 sentPackets:count 11
 attr source org_car2x_veins_modules_mac_sigSentPacket
 scalar Scenario.node[0].nic.mac1609_4 collisions:count 0
 attr source org_car2x_veins_modules_mac_sigCollision
-scalar Scenario.node[0].nic.mac1609_4 channelBusy:timeavg 0.00015372727272727
+scalar Scenario.node[0].nic.mac1609_4 channelBusy:timeavg 7.4681818181818e-05
 attr source org_car2x_veins_modules_mac_sigChannelBusy
 scalar Scenario.node[0].veinsmobility startTime 8
 scalar Scenario.node[0].veinsmobility totalTime 21

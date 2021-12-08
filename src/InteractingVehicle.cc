@@ -18,9 +18,6 @@
 
 Define_Module(InteractingVehicle);
 
-// TODO:
-// Annahme: Es bremst immer das langsamere auto, wenn beide gleichschnell sind, das, was eine höhere id hat
-// TODO: nur dann eine Nachricht broadcasten, wenn man kurz vor der kreuzung steht
 void InteractingVehicle::initialize(int stage)
 {
     DemoBaseApplLayer::initialize(stage);
@@ -33,16 +30,6 @@ void InteractingVehicle::initialize(int stage)
             traci = mobility->getCommandInterface(); // hier gib es getRouteIds und getPlannedRouteIds
             traciVehicle = mobility->getVehicleCommandInterface(); // hier gibt es getLanePosition()
 
-            // getLaneIds()
-            /*
-            {
-                auto* road = new veins::TraCICommandInterface::Road(traci, traciVehicle->getRoadId());
-                auto* move = new veins::Move();
-                //move->setDirectionByTarget();
-                move->setSpeed(road->getMeanSpeed());
-            }
-            */
-
             /***
              * Offene Fragen:
              * - TraCICommandInterface::Vehicle::stopAt() soll ein radius mitgegeben werden, der nie benutzt wird. Wieso soll dieser mitgegeben werden?
@@ -50,10 +37,14 @@ void InteractingVehicle::initialize(int stage)
 
         }
 
+        // get parameters
+        meetWarnBefore = par("meetWarnBefore");
+        meetBreakBefore = par("meetBreakBefore");
+        criticalMeetingDuration = par("criticalMeetingDuration");
         psInterval = par("psInterval");
-        EV << "psInterval: " << psInterval << std::endl;
         sendPSEvt = new cMessage("PSEvt", SEND_PS_EVT);
         sendMeetingAnnouncementEvt = new cMessage("MeetingAnnouncementEvt", SEND_MEETING_ANNOUNCEMENT_EVT);
+        sendDriveAgainEvt = new cMessage("DriveAgainEvt", SEND_DRIVE_AGAIN_EVT);
     }
     else if (stage == 1) {
         // Initializing members that require initialized other modules goes here
@@ -93,86 +84,70 @@ void InteractingVehicle::handleMessage(cMessage* msg)
         veins::Coord my_current_pos = mobility->getPositionAt(simTime());
         veins::Coord my_vec = my_current_pos - my_last_position;
         double my_current_speed = mobility->getSpeed();
-        veins::Coord my_next_point; // this is not only the next point. It is the boundary and the potential meeting point, too
 
+        veins::Coord meeting_point;
 
+        meetings.erase(enemy_name);
+
+        // cancelation requirements
         if(enemy_last_pos == veins::Coord().ZERO || // no last position
-           my_current_speed == 0 || enemy_current_speed == 0 || // would give false positives/negatives
-           .1 > std::abs(my_vec.twoDimensionalCrossProduct(enemy_vec)) // parallel
+           //my_current_speed == 0 || enemy_current_speed == 0 || // would give false positives/negatives
+           .2 > std::abs(my_vec.twoDimensionalCrossProduct(enemy_vec)) // parallel
            ) {
             enemys_last_position[ivmsg->getName()] = enemy_current_pos;
             my_last_position = my_current_pos;
+            announceNextMeeting(); // could be, that the enemy was deleted, so we propably have to announce a new meeting
             return;
         }
 
+        { // calculate intersection, see https://stackoverflow.com/a/565282
+            double my_n = (enemy_current_pos - my_current_pos).twoDimensionalCrossProduct(enemy_vec) / my_vec.twoDimensionalCrossProduct(enemy_vec);
+            double enemy_n = (enemy_current_pos - my_current_pos).twoDimensionalCrossProduct(my_vec) / enemy_vec.twoDimensionalCrossProduct(my_vec);
 
-        // 4 future me, implement this futher: Annahme:
-        // Er fährt die lane shapes ab, in der reihenfolge. dann kann man mit getLanePosition() schauen, vor welchem er ist.
-        // starten ab index 1 und
-        //   schauen, ob die distanz vom ersten zum nächsten größer ist,
-        //      wenn ja, ist es der punkt
-        //      wenn nein, dann iterieren
+            if(my_n < 0 || enemy_n < 0) // seems we'd have to drive backwards to reach that point...
+                return;
 
-        // zusatz: beim schauen mit den junction coordinaten vergleichen, sonst iterieren, um so nur die junctions zu bekommen
-        {
-            double already_driven = traciVehicle->getLanePosition();
-            auto lane = veins::TraCICommandInterface::Lane(traci, traciVehicle->getLaneId());
-            std::list<veins::Coord> shape = lane.getShape();
+            EV << "my position for the meeting is " << my_current_pos + (my_vec * my_n) << std::endl
+               << "  enemys position is " << my_current_pos + (my_vec * my_n) << std::endl;
 
-            veins::Coord start = shape.front();
-            shape.pop_front();
-            for(auto c : shape) {
-                if(traci->getDistance(start, c, true) > already_driven) {
-                    EV << "found nextpoint! " << c << std::endl;
-                    my_next_point = c;
-                    break;
-                }
-            }
-
+            meeting_point = my_current_pos + (my_vec * my_n);
         }
 
 
         { // calculate the meeting time
 
-            // cant use true (for "real" distance, dunno why, it will not find a route all the time)
-            double dist_my = traci->getDistance(my_current_pos, my_next_point, false);
-            double dist_enemy = traci->getDistance(enemy_current_pos, my_next_point, false);
-
-            EV << "my distance: " << dist_my << std::endl;
-            EV << "enemy distance: " << dist_enemy << std::endl;
+            // cant use true, maybe because its not perfectly "on their route"? Todo: fix this..
+            double dist_my = traci->getDistance(my_current_pos, meeting_point, false);
+            double dist_enemy = traci->getDistance(enemy_current_pos, meeting_point, false);
 
             double enemy_time = dist_enemy / enemy_current_speed;
             double my_time = dist_my / my_current_speed;
 
             double time_diff = enemy_time - my_time;
 
-            if(std::abs(time_diff) < critical_meeting_duration) {
+            if(std::abs(time_diff) < criticalMeetingDuration) {
                 EV << "planning meeting in" << my_time << std::endl;
-
                 meetings[enemy_name] = simTime() + my_time;
-                announceNextMeeting();
             }
 
+            announceNextMeeting();
         }
     }
 }
 
-simtime_t InteractingVehicle::getNextMeetingTime() {
-    simtime_t ealiest_meeting = simtime_t::getMaxTime();
+std::pair<std::string, simtime_t> InteractingVehicle::getNextMeetingTime() {
+    std::pair<std::string, simtime_t> ealiest_meeting = { "", simtime_t::getMaxTime() };
 
-    // TODO: imit the name as we dont need it (?)
-    for(const auto& [name, time] : meetings) {
-        if (time < ealiest_meeting && time >= simTime()) {
-            ealiest_meeting = time;
-        }
-    }
+    for(const auto& [name, time] : meetings)
+        if (time < ealiest_meeting.second && time >= simTime())
+            ealiest_meeting = { name, time };
 
     return ealiest_meeting;
 }
 
 
 void InteractingVehicle::announceNextMeeting() {
-    simtime_t time = getNextMeetingTime();
+    simtime_t time = getNextMeetingTime().second;
 
     if(sendMeetingAnnouncementEvt->isScheduled())
         cancelEvent(sendMeetingAnnouncementEvt);
@@ -180,14 +155,20 @@ void InteractingVehicle::announceNextMeeting() {
     if(time == simtime_t::getMaxTime())
         return;
 
-    if(simTime() - time > 3) { // send it as a warning message, if we have time
-        EV << "+++++ scheduling meeting @" << time - 3 << std::endl;
-        scheduleAt(time - 3, sendMeetingAnnouncementEvt);
-    }
-    else { // send as an automatic break message
-        EV << "+++++ scheduling meeting @" << time << std::endl;
-        scheduleAt(time, sendMeetingAnnouncementEvt);
-    }
+    simtime_t schedulingTime;
+
+    if((simTime() - time) >= meetWarnBefore) // send it as a warning message, if we have time
+        schedulingTime = time - meetWarnBefore;
+    else // send as an automatic break message
+        schedulingTime = time - meetBreakBefore;
+
+    if(schedulingTime < simTime())
+        return; // maybe, as a last resort, do schedulingTime = simTime()
+
+    //cancelEvent(sendDriveAgainEvt);
+
+    EV << "+++++ scheduling meeting @" << schedulingTime << std::endl;
+    scheduleAt(schedulingTime, sendMeetingAnnouncementEvt);
 }
 
 void InteractingVehicle::finish()
@@ -225,22 +206,46 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             break;
         }
         case SEND_MEETING_ANNOUNCEMENT_EVT: {
-            simtime_t time = getNextMeetingTime();
+            auto next_meeting = getNextMeetingTime();
 
-            if(time == simtime_t::getMaxTime())
+            if(next_meeting.second == simtime_t::getMaxTime())
                 break;
 
-            if(simTime() - time <= 3) {
-                bubble("WARNING!");
-                findHost()->bubble("Warning! Crash incoming");
-                EV << "<<< BUBBELING!" << getParentModule()->getFullName() << std::endl;
+            cancelEvent(sendDriveAgainEvt);
+
+            if( (simTime() - next_meeting.second) <= meetBreakBefore) {
+                // rotes icon löschen!
+                getParentModule()->getDisplayString().setTagArg("i", 1, "grey");
+
+                // ich habe meine gerade gegeben, durch meine position + meinen vektor,
+                //   abstand zum punkt berechnen, wenn positiv -> kommt von rechts
+                //   wenn negativ -> kommt von links
+                veins::Coord my_current_pos = mobility->getPositionAt(simTime());
+                double d = ((my_last_position - enemys_last_position[next_meeting.first]).twoDimensionalCrossProduct(my_current_pos - my_last_position))/(my_current_pos - my_last_position).length();
+                EV << "d is: " << d << std::endl;
+
+                if(d < 0) { // enemy is on the right, so we have to break
+                    EV << getParentModule()->getFullName() << ": Breaking in favor of enemy car " << next_meeting.first << std::endl;
+                    findHost()->bubble("Breaking!");
+                    traciVehicle->setSpeed(0);
+
+                    scheduleAt(simTime() + 7, sendDriveAgainEvt); // TODO: 3 should be a parameter
+                }
+
+                // hier muss ich check, ob der enemy von rechts kommt, wenn ja -> bremsen
+                // dann natürlich noch einen timer/message setzen, um wieder loszufahren, wenn er weg ist...
+
+            } else if( (simTime() - next_meeting.second) <= meetWarnBefore) {
+                findHost()->bubble("Warning!");
+                getParentModule()->getDisplayString().setTagArg("i", 1, "red");
             }
 
-                // trigger warning
-            //else // send as an automatic break message
-            //    scheduleAt(time, sendMeetingAnnouncementEvt);
-
-            // might meet another car...
+            break;
+        }
+        case SEND_DRIVE_AGAIN_EVT: {
+            // TODO: get the main speed for the track?
+            traciVehicle->setSpeed(50);
+            break;
         }
     }
 

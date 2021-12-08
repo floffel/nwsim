@@ -21,6 +21,8 @@ import org.car2x.veins.modules.application.ieee80211p.DemoBaseApplLayer;
 simple InteractingVehicle extends DemoBaseApplLayer like IBaseApplLayer {   
     parameters:
         @class(InteractingVehicle);
-        double psInterval = 1s @unit(s); //the intervall between 2 ps messages
-        //sendBeacons = true;
+        double psInterval = default(2s) @unit(s); //the intervall between 2 ps messages
+        double meetWarnBefore = default(7s) @unit(s); //the duration a car has before to meet when a warning shall appear
+        double meetBreakBefore = default(3s) @unit(s); //the duration a car is before to meet when a break shall be initiated
+		double criticalMeetingDuration = default(1s) @unit(s);
 }
