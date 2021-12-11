@@ -19,7 +19,9 @@
 #include <vector>
 #include <tuple>
 #include <map>
+#include <cmath>
 #include <omnetpp.h>
+#include "veins/base/utils/FWMath.h"
 #include "veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
 #include "InterVehicleMessage_m.h"
 #include "veins/modules/mobility/traci/TraCIMobility.h"
@@ -39,6 +41,7 @@ using veins::DemoBaseApplLayer;
 class InteractingVehicle : public DemoBaseApplLayer {
 
 public:
+    ~InteractingVehicle() override;
 
     /**
      * Finish hook. finish() is called after end of simulation if it
@@ -107,7 +110,7 @@ protected:
     /* Interval for PS Messages*/
     simtime_t psInterval;
 
-    /* messages for periodic events, namly the position/speed update transmissions */
+    /* messages for periodic events, namely the position/speed update transmissions */
     cMessage* sendPSEvt;
     /* messages for MeetingWarning */
     cMessage* sendMWEvt;
@@ -115,6 +118,8 @@ protected:
     cMessage* sendMBEvt;
     /* messages for announcing (potential) meetings and for triggering actions */
     cMessage* sendDriveAgainEvt;
+
+    InterVehicleMessage* wiv;
 };
 
 #endif

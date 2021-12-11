@@ -18,6 +18,16 @@
 
 Define_Module(InteractingVehicle);
 
+InteractingVehicle::~InteractingVehicle()
+{
+    //DemoBaseApplLayer::~DemoBaseApplLayer();
+
+    cancelAndDelete(sendPSEvt);
+    cancelAndDelete(sendDriveAgainEvt);
+    cancelAndDelete(sendMWEvt);
+    cancelAndDelete(sendMBEvt);
+}
+
 void InteractingVehicle::initialize(int stage)
 {
     DemoBaseApplLayer::initialize(stage);
@@ -68,13 +78,8 @@ void InteractingVehicle::handleMessage(cMessage* msg)
         handleSelfMsg(msg);
         return;
     }
-    EV << "new message" << std::endl;
-
-    if(mobility->getSpeed() == 0) // can't do anything with no speed
-        return;
 
     // put handling of messages from other nodes here
-
     if(InterVehicleMessage *ivmsg = check_and_cast<InterVehicleMessage *>(msg)) {
         EV << "[" << getParentModule()->getFullName() << "]" << "Got a new InterVehicleMessage from " << ivmsg->getName() << "with position " << ivmsg->getPosition() << ", Speed: " << ivmsg->getSpeed() << std::endl;
 
@@ -83,10 +88,14 @@ void InteractingVehicle::handleMessage(cMessage* msg)
         veins::Coord enemy_current_pos = ivmsg->getPosition();
         veins::Coord enemy_vec = enemy_current_pos - enemy_last_pos;
         double enemy_current_speed = ivmsg->getSpeed();
+        if(enemy_current_speed == 0)
+            enemy_current_speed = 50; // for more safety, pretend we are moving, TODO: use the road mean speed
 
         veins::Coord my_current_pos = mobility->getPositionAt(simTime());
         veins::Coord my_vec = my_current_pos - my_last_position;
         double my_current_speed = mobility->getSpeed();
+        if(my_current_speed == 0)
+            my_current_speed = 50; // for more safety, pretend we are moving
 
         veins::Coord meeting_point;
 
@@ -94,16 +103,15 @@ void InteractingVehicle::handleMessage(cMessage* msg)
 
         // cancelation requirements
         if(enemy_last_pos == veins::Coord().ZERO || // no last position
-           //my_current_speed == 0 || enemy_current_speed == 0 || // would give false positives/negatives
-           .1 > std::abs(my_vec.twoDimensionalCrossProduct(enemy_vec)) // parallel
+           veins::math::almost_equal(std::abs(my_vec.twoDimensionalCrossProduct(enemy_vec)), 0.0) // parallel
            ) {
             enemys_last_position[ivmsg->getName()] = enemy_current_pos;
             my_last_position = my_current_pos;
-            announceNextMeeting(); // could be, that the enemy was deleted, so we propably have to announce a new meeting
+            announceNextMeeting(); // could be, that the enemy was deleted, so we probably have to announce a new meeting
             return;
         }
 
-        EV << "[" << getParentModule()->getFullName() << "]" << "not the same, cross product gives: " << my_vec.twoDimensionalCrossProduct(enemy_vec);
+        EV << "not the same, cross product gives: " << my_vec.twoDimensionalCrossProduct(enemy_vec) << std::endl;
 
         { // calculate intersection, see https://stackoverflow.com/a/565282
             double my_n = (enemy_current_pos - my_current_pos).twoDimensionalCrossProduct(enemy_vec) / my_vec.twoDimensionalCrossProduct(enemy_vec);
@@ -138,6 +146,8 @@ void InteractingVehicle::handleMessage(cMessage* msg)
             announceNextMeeting();
         }
     }
+
+    delete(msg);
 }
 
 std::pair<std::string, simtime_t> InteractingVehicle::getNextMeetingTime() {
@@ -152,7 +162,8 @@ std::pair<std::string, simtime_t> InteractingVehicle::getNextMeetingTime() {
 
 
 void InteractingVehicle::announceNextMeeting() {
-    simtime_t time = getNextMeetingTime().second;
+    auto next_meeting = getNextMeetingTime();
+    simtime_t time = next_meeting.second;
 
     if(sendMWEvt->isScheduled())
         cancelEvent(sendMWEvt);
@@ -170,15 +181,24 @@ void InteractingVehicle::announceNextMeeting() {
     else if(simTime() < schedulingWarnTime) // warn correctly
         scheduleAt(schedulingWarnTime, sendMWEvt);
 
-    if(simTime() > schedulingBreakTime && simTime() < time) { // should have breaked earlier
+    bool from_left = false; // only the cars coming from left have to break
+    {
+        veins::Coord my_current_pos = mobility->getPositionAt(simTime());
+        double d = ((enemys_last_position[next_meeting.first] - my_last_position).twoDimensionalCrossProduct(my_current_pos - my_last_position))/(my_current_pos - my_last_position).length();
+        EV << "d is: " << d << std::endl;
+
+        from_left = d < 0;
+    }
+
+    if(from_left && simTime() > schedulingBreakTime && simTime() < time) { // should have breaked earlier
         // TODO: this three lines are doubled... bad coding style i guess, fix it...
         if(sendDriveAgainEvt->isScheduled())
             cancelEvent(sendDriveAgainEvt);
-        scheduleAt(schedulingBreakTime + breakDuration, sendDriveAgainEvt);
+        scheduleAt(simTime() + breakDuration, sendDriveAgainEvt);
 
         scheduleAt(simTime(), sendMBEvt);
     }
-    else if(simTime() < schedulingBreakTime) { // warn correctly
+    else if(from_left && simTime() < schedulingBreakTime) { // warn correctly
         if(sendDriveAgainEvt->isScheduled())
             cancelEvent(sendDriveAgainEvt);
         scheduleAt(schedulingBreakTime + breakDuration, sendDriveAgainEvt);
@@ -209,7 +229,7 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             //sendDown(generateMsg());
             // todo: we have to send the psEvtMessage down, not a new one
 
-            InterVehicleMessage* wiv = new InterVehicleMessage(getParentModule()->getFullName());
+            wiv = new InterVehicleMessage(getParentModule()->getFullName());
 
             auto position = mobility->getPositionAt(simTime()); // DemoBaseApplLayer::curPosition
             auto speed = mobility->getSpeed(); // DemoBaseApplLayer::curSpeed
@@ -237,23 +257,18 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             if(next_meeting.second == simtime_t::getMaxTime()) // meeting was deleted
                 break;
 
-            veins::Coord my_current_pos = mobility->getPositionAt(simTime());
-            double d = ((enemys_last_position[next_meeting.first] - my_last_position).twoDimensionalCrossProduct(my_current_pos - my_last_position))/(my_current_pos - my_last_position).length();
-            EV << "d is: " << d << std::endl;
+            EV << getParentModule()->getFullName() << ": Breaking in favor of enemy car " << next_meeting.first << std::endl;
+            findHost()->bubble("Breaking!");
+            traciVehicle->setSpeed(0);
+            getParentModule()->getDisplayString().setTagArg("i", 1, "grey");
 
-            if(d > 0) { // enemy is on the right, so we have to break
-                EV << getParentModule()->getFullName() << ": Breaking in favor of enemy car " << next_meeting.first << std::endl;
-                findHost()->bubble("Breaking!");
-                traciVehicle->setSpeed(0);
-                getParentModule()->getDisplayString().setTagArg("i", 1, "grey");
-
-                meetings.erase(next_meeting.first); // meeting over, so we can remove it from the list
-                //announceNextMeeting(); // endlosschleife
-            }
+            meetings.erase(next_meeting.first); // meeting over, so we can remove it from the list
+            //announceNextMeeting(); // endlosschleife
 
             break;
         }
         case SEND_DRIVE_AGAIN_EVT: {
+            announceNextMeeting(); // checks, when the next meeting is planned and if we really are allowed to drive
             // TODO: check if the way is clear (e.g. calling getNextMeetingTime)
             // TODO: get the main speed for the track?
             findHost()->bubble("Driving");

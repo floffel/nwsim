@@ -1,8 +1,9 @@
 ../out/clang-debug/src/InteractingVehicle.o: InteractingVehicle.cc \
   InteractingVehicle.h /home/veins/src/omnetpp-5.6.2/include/omnetpp.h \
+  /home/veins/src/veins/src/veins/base/utils/FWMath.h \
+  /home/veins/src/veins/src/veins/veins.h \
   /home/veins/src/veins/src/veins/modules/application/ieee80211p/DemoBaseApplLayer.h \
   /home/veins/src/veins/src/veins/base/modules/BaseApplLayer.h \
-  /home/veins/src/veins/src/veins/veins.h \
   /home/veins/src/veins/src/veins/base/modules/BaseLayer.h \
   /home/veins/src/veins/src/veins/base/modules/BatteryAccess.h \
   /home/veins/src/veins/src/veins/base/modules/BaseModule.h \
@@ -15,7 +16,6 @@
   /home/veins/src/veins/src/veins/modules/messages/BaseFrame1609_4_m.h \
   /home/veins/src/veins/src/veins/modules/messages/DemoServiceAdvertisement_m.h \
   /home/veins/src/veins/src/veins/base/utils/Coord.h \
-  /home/veins/src/veins/src/veins/base/utils/FWMath.h \
   /home/veins/src/veins/src/veins/modules/messages/DemoSafetyMessage_m.h \
   /home/veins/src/veins/src/veins/base/connectionManager/ChannelAccess.h \
   /home/veins/src/veins/src/veins/base/utils/AntennaPosition.h \
@@ -54,11 +54,13 @@ InteractingVehicle.h:
 
 /home/veins/src/omnetpp-5.6.2/include/omnetpp.h:
 
+/home/veins/src/veins/src/veins/base/utils/FWMath.h:
+
+/home/veins/src/veins/src/veins/veins.h:
+
 /home/veins/src/veins/src/veins/modules/application/ieee80211p/DemoBaseApplLayer.h:
 
 /home/veins/src/veins/src/veins/base/modules/BaseApplLayer.h:
-
-/home/veins/src/veins/src/veins/veins.h:
 
 /home/veins/src/veins/src/veins/base/modules/BaseLayer.h:
 
@@ -83,8 +85,6 @@ InteractingVehicle.h:
 /home/veins/src/veins/src/veins/modules/messages/DemoServiceAdvertisement_m.h:
 
 /home/veins/src/veins/src/veins/base/utils/Coord.h:
-
-/home/veins/src/veins/src/veins/base/utils/FWMath.h:
 
 /home/veins/src/veins/src/veins/modules/messages/DemoSafetyMessage_m.h:
 
