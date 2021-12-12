@@ -62,8 +62,8 @@ void InteractingVehicle::initialize(int stage)
         // initialize the start position
         //my_last_position = mobility->getPositionAt(simTime());
 
-        simtime_t randomOffset = dblrand() * psInterval;
-        scheduleAt(simTime() + randomOffset, sendPSEvt);
+        //simtime_t randomOffset = dblrand() * psInterval;
+        //scheduleAt(simTime() + randomOffset, sendPSEvt);
         // globalStats = FindModule<GlobalStatistics*>::findSubModule(getParentModule()->getParentModule());
     }
 }
@@ -97,12 +97,15 @@ void InteractingVehicle::calculateMeetings() {
 
     veins::Coord my_current_pos = my_last_position[my_last_position.size()-1].first;
     veins::Coord my_vec =  my_last_position[my_last_position.size()-1].first -  my_last_position[my_last_position.size()-2].first;
-    double my_current_speed = getAverageSpeed(my_last_position);
+    //double my_current_speed = getAverageSpeed(my_last_position);
+    //double my_current_speed = my_last_position[my_last_position.size()-1].second;
+    // some form of pid controller
+    double my_current_speed = my_last_position[my_last_position.size()-1].second*.95 + getAverageSpeed(my_last_position)*.05;
 
     meetings.clear();
 
     for(const auto& [name, history] : enemys_last_position) {
-        if(enemys_last_position.size() < 2)
+        if(history.size() < 2)
             continue;
 
         veins::Coord meeting_point;
@@ -110,7 +113,9 @@ void InteractingVehicle::calculateMeetings() {
         std::string enemy_name = name;
         veins::Coord enemy_current_pos = history[history.size()-1].first;
         veins::Coord enemy_vec = history[history.size()-1].first -  history[history.size()-2].first;
-        double enemy_current_speed = getAverageSpeed(history);
+        //double enemy_current_speed = getAverageSpeed(history);
+        //double enemy_current_speed = history[history.size()-1].second;
+        double enemy_current_speed = history[history.size()-1].second * .95 + getAverageSpeed(history) *.05;
 
         if(std::abs(my_vec.twoDimensionalCrossProduct(enemy_vec)) == 0.0) //parallel
             continue;
@@ -155,10 +160,16 @@ void InteractingVehicle::onInterVehicleMessage(InterVehicleMessage *ivmsg) {
     enemys_last_position[ivmsg->getName()].push_back({ ivmsg->getPosition(), ivmsg->getSpeed() });
 
     calculateMeetings();
+
+    // calculate if way is free
+
 }
 
 void InteractingVehicle::handlePositionUpdate(cObject* obj) {
     DemoBaseApplLayer::handlePositionUpdate(obj);
+
+    //scheduleAt(simTime() + randomOffset, sendPSEvt);
+    scheduleAt(simTime() + dblrand(), sendPSEvt); // random offset, so the messages don't inteverence
 
     EV << "handling position update event" << std::endl;
     my_last_position.push_back({ mobility->getPositionAt(simTime()), mobility->getSpeed() });
@@ -166,23 +177,36 @@ void InteractingVehicle::handlePositionUpdate(cObject* obj) {
     calculateMeetings();
 }
 
+// TODO: ist das hier richtig?
 std::pair<std::string, simtime_t> InteractingVehicle::getNextMeetingTime(int offset) {
-    std::pair<std::string, simtime_t> ealiest_meeting = { "", simtime_t::getMaxTime() };
+    std::pair<std::string, simtime_t> earliest_meeting = { "", simtime_t::getMaxTime() };
 
-    for(const auto& [name, time] : meetings) {
-        if (time < ealiest_meeting.second && time >= simTime() && offset == 0)
-            ealiest_meeting = { name, time };
-        else
-            offset--;
+    if(offset > meetings.size())
+        return earliest_meeting;
+
+    std::map<std::string, simtime_t> meetings_copy = meetings;
+
+    while(offset >= 0) {
+        offset--;
+
+        for(const auto& [name, time] : meetings_copy)
+            if (time < earliest_meeting.second && time >= simTime())
+                earliest_meeting = { name, time };
+
+        if(offset > 0) { // TODO: nicht die beste lösung...
+            meetings_copy.erase(earliest_meeting.first);
+            earliest_meeting = { "", simtime_t::getMaxTime() };
+        }
     }
 
-    return ealiest_meeting;
+    return earliest_meeting;
 }
 
 // returns true if from left, in all other cases (even in failures) returns false
 bool InteractingVehicle::fromLeft(std::string name) {
     auto enemys_hist = enemys_last_position[name];
-    if(enemys_hist.size() < 2 || my_last_position.size() < 2)
+    if(enemys_hist.size() < 2 ||
+       my_last_position.size() < 2)
         return false;
 
     veins::Coord my_current_pos = my_last_position[my_last_position.size()-1].first;
@@ -201,10 +225,10 @@ std::pair<std::string, simtime_t> InteractingVehicle::getNextMeetingFromLeft() {
     auto next_meeting = getNextMeetingTime();
     int off = 1;
 
-    while(fromLeft(next_meeting.first) == false &&           // not from left
-          next_meeting.second == simtime_t::getMaxTime()) {  // nothing more to do, all iterated
-        next_meeting = getNextMeetingTime(off);
+    while(!fromLeft(next_meeting.first) &&          // not from left
+          next_meeting.second != simtime_t::getMaxTime()) {  // nothing more to do, all iterated
 
+        next_meeting = getNextMeetingTime(off);
         off++;
     }
 
@@ -224,7 +248,6 @@ void InteractingVehicle::announceNextMeeting() {
         return;
 
     simtime_t schedulingWarnTime = time - meetWarnBefore;
-    simtime_t schedulingBreakTime = time - meetBreakBefore;
 
     if(simTime() >= schedulingWarnTime && simTime() <= time) // should have warned earlier
         scheduleAt(simTime(), sendMWEvt);
@@ -232,8 +255,12 @@ void InteractingVehicle::announceNextMeeting() {
         scheduleAt(schedulingWarnTime, sendMWEvt);
 
     next_meeting = getNextMeetingFromLeft();
-    if(next_meeting.second == simtime_t::getMaxTime())
+    time = next_meeting.second;
+
+    if(time == simtime_t::getMaxTime())
         return; // no meeting found
+
+    simtime_t schedulingBreakTime = time - meetBreakBefore;
 
     if(simTime() >= schedulingBreakTime && simTime() <= time) { // should have breaked earlier
         // TODO: this three lines are doubled... bad coding style i guess, fix it...
@@ -249,9 +276,6 @@ void InteractingVehicle::announceNextMeeting() {
         scheduleAt(schedulingBreakTime + breakDuration, sendDriveAgainEvt);
 
         scheduleAt(schedulingBreakTime, sendMBEvt);
-    } else {
-        if(sendDriveAgainEvt->isScheduled())
-            cancelEvent(sendDriveAgainEvt);
     }
 }
 
@@ -259,6 +283,13 @@ void InteractingVehicle::finish()
 {
     DemoBaseApplLayer::finish();
     // maybe you want to record some scalars?
+}
+
+void InteractingVehicle::continueDriving()
+{
+    findHost()->bubble("Driving");
+    getParentModule()->getDisplayString().setTagArg("i", 1, "green");
+    traciVehicle->setSpeed(50);
 }
 
 void InteractingVehicle::handleSelfMsg(cMessage* msg)
@@ -271,16 +302,14 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
         case SEND_PS_EVT: {
             auto wiv = new InterVehicleMessage(getParentModule()->getFullName());
 
-            auto position = mobility->getPositionAt(simTime());
-            auto speed = mobility->getSpeed();
+            veins::Coord my_current_pos = my_last_position[my_last_position.size()-1].first;
+            double my_current_speed = my_last_position[my_last_position.size()-1].second;
 
-            wiv->setPosition(position);
-            wiv->setSpeed(speed);
+            wiv->setPosition(my_current_pos);
+            wiv->setSpeed(my_current_speed);
             wiv->setChannelNumber(static_cast<int>(veins::Channel::cch));
 
             sendDown(wiv);
-
-            scheduleAt(simTime() + psInterval, sendPSEvt);
             break;
         }
         case SEND_MW_EVT: { // Warning triggered
@@ -289,6 +318,7 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             if(next_meeting.second == simtime_t::getMaxTime()) // meeting was deleted
                 break;
 
+            EV << getParentModule()->getFullName() << "warning, " << next_meeting.first << "is near!";
             findHost()->bubble("Warning!");
             getParentModule()->getDisplayString().setTagArg("i", 1, "red");
             break;
@@ -303,16 +333,34 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             traciVehicle->setSpeed(0);
             getParentModule()->getDisplayString().setTagArg("i", 1, "grey");
 
-            meetings.erase(next_meeting.first); // meeting over, so we can remove it from the list
-            announceNextMeeting();
+            //ongoing_meetings.push_back({ next_meeting.first, breakDuration });
+
+            //meetings.erase(next_meeting.first); // meeting over, so we can remove it from the list
+            //announceNextMeeting();
 
             break;
         }
         case SEND_DRIVE_AGAIN_EVT: {
-            announceNextMeeting(); // checks, when the next meeting is planned and if we really are allowed to drive
-            findHost()->bubble("Driving");
-            getParentModule()->getDisplayString().setTagArg("i", 1, "green");
-            traciVehicle->setSpeed(50);
+
+            // check if we are allowed to drive
+            EV << "getting next meeting..." << std::endl;
+            auto next_meeting = getNextMeetingFromLeft();
+            simtime_t time = next_meeting.second;
+
+            EV << "time is: " << time << std::endl;
+
+            if(time == simtime_t::getMaxTime()) {
+                continueDriving();
+                break;
+            }
+
+            auto schedulingBreakTime = time - meetBreakBefore;
+            if(time < simtime_t::getMaxTime() || (simTime() <= time && simTime() >= schedulingBreakTime)) { // do not drive
+                //announceNextMeeting();
+                scheduleAt(simTime() + breakDuration, sendDriveAgainEvt);
+            } else { // drive
+                continueDriving();
+            }
             break;
         }
     }

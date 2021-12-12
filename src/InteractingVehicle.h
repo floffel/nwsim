@@ -93,11 +93,16 @@ protected:
 
     virtual bool fromLeft(std::string name);
 
+    virtual void continueDriving();
+
     virtual std::pair<std::string, simtime_t> getNextMeetingFromLeft();
 
     std::map<std::string, std::vector<std::pair<veins::Coord, double>>> enemys_last_position; //and speed
 
     std::vector<std::pair<veins::Coord, double>> my_last_position;
+
+    // hols the ongoing meetings, e.g. the blocklist
+    //std::vector<std::pair<std::string, simtime_t>> ongoing_meetings;
 
 
     // hold the possible meeting messages to trigger a warning etc.
