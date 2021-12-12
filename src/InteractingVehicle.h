@@ -47,7 +47,7 @@ public:
      * Finish hook. finish() is called after end of simulation if it
      * terminated without error.
      */
-    virtual void finish();
+    virtual void finish() override;
 
     // we have to take different ids becourse of DemoBaseApplLayer, so we'll go from 999 to 0
     enum InteractingVehicleMessageKinds {
@@ -62,32 +62,43 @@ protected:
     /**
      * Multi-stage initialization hook.
      */
-    virtual void initialize(int stage);
+    virtual void initialize(int stage) override;
 
     /**
-      * Contains the module's message handling function.
+      * @brief Contains the module's message handling function.
+      *
       * This is called both when a self message or a message from
       * another node reaches this node.
       */
-    virtual void handleMessage(cMessage* msg);
+    virtual void handleMessage(cMessage* msg) override;
 
-    /**
-     * Handles self messages, such as timers.
-     */
-    virtual void handleSelfMsg(cMessage* msg);
+    /** @brief handles self messages, such as timers. */
+    virtual void handleSelfMsg(cMessage* msg) override;
 
-    /**
-     * Gets the next time a meeting could take place
-     */
-    virtual std::pair<std::string, simtime_t> getNextMeetingTime();
+    /** @brief gets the next time a meeting could take place */
+    virtual std::pair<std::string, simtime_t> getNextMeetingTime(int offset=0);
 
-    /**
-     * Announces a selfMessage for handling the meeting
-     */
+    /** @brief announces self message for handling the next meeting, if any */
     virtual void announceNextMeeting();
 
-    std::map<std::string, veins::Coord> enemys_last_position;
-    veins::Coord my_last_position;
+    /** @brief handle messages from other vehicles */
+    virtual void onInterVehicleMessage(InterVehicleMessage *ivmsg);
+
+    /** @brief (re)calculate meetings */
+    virtual void calculateMeetings();
+
+    virtual void handlePositionUpdate(cObject* obj) override;
+
+    virtual double getAverageSpeed(std::vector<std::pair<veins::Coord, double>> hist);
+
+    virtual bool fromLeft(std::string name);
+
+    virtual std::pair<std::string, simtime_t> getNextMeetingFromLeft();
+
+    std::map<std::string, std::vector<std::pair<veins::Coord, double>>> enemys_last_position; //and speed
+
+    std::vector<std::pair<veins::Coord, double>> my_last_position;
+
 
     // hold the possible meeting messages to trigger a warning etc.
     //std::map<std::string, cMessage*> meeting_messages;
@@ -118,8 +129,6 @@ protected:
     cMessage* sendMBEvt;
     /* messages for announcing (potential) meetings and for triggering actions */
     cMessage* sendDriveAgainEvt;
-
-    InterVehicleMessage* wiv;
 };
 
 #endif
