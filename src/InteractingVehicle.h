@@ -107,10 +107,6 @@ protected:
     // to catch the last send position and not resending it
     veins::Coord last_sent;
 
-    // hols the ongoing meetings, e.g. the blocklist
-    //std::vector<std::pair<std::string, simtime_t>> ongoing_meetings;
-
-
     // hold the possible meeting messages to trigger a warning etc.
     //std::map<std::string, cMessage*> meeting_messages;
     // bool holds the "was warned already", 3sec before

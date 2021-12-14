@@ -101,38 +101,6 @@ double InteractingVehicle::getAverageAcceleration(std::vector<std::tuple<veins::
     simtime_t time = (std::get<2>(hist[1]) - std::get<2>(hist[0]));
     double acceleration = 2*(length/pow(time.dbl(), 2.0));
     return acceleration;
-
-    /*double average = 0;
-    for(int i=1; i < hist.size(); i+=2) {
-        double length = (std::get<0>(hist[i]) - std::get<0>(hist[i-1])).length();
-        simtime_t time = (std::get<2>(hist[i]) - std::get<2>(hist[i-1]));
-        double acceleration = 2*(length/pow(time.dbl(), 2.0));
-
-        average += acceleration;
-    }*/
-
-    //return average / (hist.size()/2);
-
-    /*auto length = (std::get<0>(hist[hist.size()-1]) - std::get<0>(hist[hist.size()-2])).length();
-    average = 2 * length;
-    average /= pow((std::get<2>(hist[hist.size()-1]) - std::get<2>(hist[hist.size()-2])).dbl(), 2.0);
-    */
-    /*ret = std::get<1>(hist[hist.size()-1]) - std::get<1>(hist[hist.size()-2]);
-    ret /= (std::get<2>(hist[hist.size()-1]) - std::get<2>(hist[hist.size()-2])).dbl();
-
-    return ret;*/
-    //return ret * .5 + average * .5;
-
-    /*
-    for(int i=1; i < hist.size(); i+=2) {
-        double length = (std::get<0>(hist[i]) - std::get<0>(hist[i-1])).length();
-        simtime_t time = (std::get<2>(hist[i]) - std::get<2>(hist[i-1]));
-        double acceleration = 2*(length/pow(time.dbl(), 2.0));
-
-        average += acceleration;
-    }
-
-    return average / (hist.size());*/
 }
 
 void InteractingVehicle::calculateMeetings() {
@@ -141,17 +109,6 @@ void InteractingVehicle::calculateMeetings() {
 
     veins::Coord my_current_pos = std::get<0>(myDrivingHistory[myDrivingHistory.size()-1]);
     veins::Coord my_last_pos = std::get<0>(myDrivingHistory[myDrivingHistory.size()-2]);
-    { // we can't calculate a vector, if the positions don't differe from each other
-      // todo: do the same with my_vec && some error handling
-        // todo: das hier kann man lösen, indem man nicht die selben koordinaten doppelt sendet!
-        int i = 1;
-        while(i < myDrivingHistory.size()-1 && my_current_pos == my_last_pos) {
-            my_last_pos = std::get<0>(myDrivingHistory[myDrivingHistory.size()-(2+i)]);
-            i++;
-        }
-    }
-
-    // TODO: die beschleunigung pro länge berechnen und mit der länge "interpolieren"!
 
     veins::Coord my_vec =  std::get<0>(myDrivingHistory[myDrivingHistory.size()-1]) - my_last_pos;
     my_vec = (my_vec/my_vec.length())*100;
@@ -178,22 +135,7 @@ void InteractingVehicle::calculateMeetings() {
         std::string enemy_name = name;
         veins::Coord enemy_current_pos = std::get<0>(history[history.size()-1]);
         veins::Coord enemy_last_pos = std::get<0>(history[history.size()-2]);
-        { // we can't calculate a vector, if the positions don't differe from each other
-          // todo: do the same with my_vec && some error handling
-            int i = 1;
-            while(i < history.size()-1 && enemy_current_pos == enemy_last_pos) {
-                enemy_last_pos = std::get<0>(history[history.size()-(2+i)]);
-                i++;
-            }
-        }
-
-        // TODO: nur nachrichten senden, wenn sich die position tatsächlich verändert hat?
-
         veins::Coord enemy_vec = (std::get<0>(history[history.size()-1]) - enemy_last_pos);
-
-
-        EV << "**** enemy_vec = (history[history.size()-1].first -  enemy_last_pos" << std::endl
-                << "               = " << std::get<0>(history[history.size()-1]) << " - " <<  enemy_last_pos << std::endl;
 
         enemy_vec = (enemy_vec/enemy_vec.length())*100;
         //double enemy_current_speed = getAverageSpeed(history);
@@ -210,24 +152,10 @@ void InteractingVehicle::calculateMeetings() {
             double my_n = (enemy_current_pos - my_current_pos).twoDimensionalCrossProduct(enemy_vec) / my_vec.twoDimensionalCrossProduct(enemy_vec);
             double enemy_n = (my_current_pos - enemy_current_pos).twoDimensionalCrossProduct(my_vec) / enemy_vec.twoDimensionalCrossProduct(my_vec);
 
-            EV << "!!    my_n = (enemy_current_pos - my_current_pos).twoDimensionalCrossProduct(enemy_vec) / my_vec.twoDimensionalCrossProduct(enemy_vec);" << std::endl
-                    << " !         = " << enemy_current_pos << " - " << my_current_pos << ".twoDimensionalCrossProduct(" << enemy_vec << ")"
-                      << " / " << my_vec << ".twoDimensionalCrossProduct("<< enemy_vec << ")" << std::endl
-                    << " !         = " << enemy_current_pos-my_current_pos << ".twoDimensionalCrossProduct(" << enemy_vec << ")"
-                      << " / " << my_vec.twoDimensionalCrossProduct(enemy_vec)
-                    << " !         =" << (enemy_current_pos-my_current_pos).twoDimensionalCrossProduct( enemy_vec)
-                        << " / " << my_vec.twoDimensionalCrossProduct(enemy_vec)
-                    << "           " << my_n << std::endl;
-
-
             if(my_n < 0 || enemy_n < 0) // seems we'd have to drive backwards to reach that point...
-                return;
+                continue;
 
             meeting_point = my_current_pos + (my_vec * my_n);
-            EV << "**    meeting_point = my_current_pos + (my_vec * my_n)" << std::endl
-                    << "**    meeting_point = " << my_current_pos << " + " << my_vec << "*" << my_n
-                    << " = " << my_current_pos << "+" <<  my_vec * my_n
-                    << " =" << meeting_point << std::endl;
 
         }
 
@@ -238,11 +166,6 @@ void InteractingVehicle::calculateMeetings() {
 
             double dist_my = (meeting_point - my_current_pos).length();
             double dist_enemy = (meeting_point - enemy_current_pos).length();
-            EV << "    dist_my = (meeting_point - my_current_pos).length()" << std::endl
-                    << "    dist_my = " << meeting_point << " - " << my_current_pos
-                    << "= " << meeting_point - my_current_pos
-                    << "=" << (meeting_point - my_current_pos).length() << std::endl;
-
 
             //double enemy_time = dist_enemy / (enemy_current_speed + (getAverageAcceleration(history) / dist_enemy) );
             //double my_time = dist_my / (my_current_speed + (getAverageAcceleration(myDrivingHistory) / dist_my) );
@@ -275,7 +198,6 @@ void InteractingVehicle::onInterVehicleMessage(InterVehicleMessage *ivmsg) {
             << "Got a new InterVehicleMessage from " << ivmsg->getName() << "with position " << ivmsg->getPosition() << ", Speed: " << ivmsg->getSpeed() << std::endl;
 
     enemysDrivingHistory[ivmsg->getName()].push_back({ ivmsg->getPosition(), ivmsg->getSpeed(), simTime() });
-    // TODO: damit das hier funktioniert muss die Zeit immer gleichmäßig bleiben, wann er die nachrichten verschickt!
 
     calculateMeetings();
 }
@@ -283,14 +205,9 @@ void InteractingVehicle::onInterVehicleMessage(InterVehicleMessage *ivmsg) {
 void InteractingVehicle::handlePositionUpdate(cObject* obj) {
     DemoBaseApplLayer::handlePositionUpdate(obj);
 
-    //scheduleAt(simTime() + randomOffset, sendPSEvt);
-    //if(!sendPSEvt->isScheduled()) // messages too close to each other, would inteverence even with random offset
-    //    scheduleAt(simTime() + 3*dblrand(), sendPSEvt);
-
     EV << "[" << getParentModule()->getFullName() << "]" << "handling position update event "
             << "with position " << mobility->getPositionAt(simTime()) << ", Speed: " << mobility->getSpeed() << std::endl;
 
-    //if(myDrivingHistory[myDrivingHistory-
     int size = myDrivingHistory.size();
     auto pos = mobility->getPositionAt(simTime());
     if(size > 0 && std::get<0>(myDrivingHistory[size-1]) == pos) {
@@ -338,13 +255,10 @@ bool InteractingVehicle::isFromLeft(std::string name) {
     veins::Coord enemys_current_pos = std::get<0>(enemys_hist[enemys_hist.size()-1]);
 
     double d = ((enemys_current_pos - my_last_pos).twoDimensionalCrossProduct(my_current_pos - my_last_pos))/(my_current_pos - my_last_pos).length();
-    EV << "d is: " << d << std::endl;
-
     return d < 0;
 }
 
 // get the first meeting where we would be the car from the left
-
 std::pair<std::string, simtime_t> InteractingVehicle::getNextMeetingFromLeft() {
     auto next_meeting = getNextMeetingTime();
     int off = 0;
@@ -373,8 +287,6 @@ void InteractingVehicle::announceNextMeeting() {
 
     simtime_t schedulingWarnTime = time - meetWarnBefore;
 
-    EV << "++++++[" << getParentModule()->getFullName() << "] Warning @" << schedulingWarnTime << std::endl;
-
     if(simTime() >= schedulingWarnTime && simTime() <= time) // should have warned earlier
         scheduleAt(simTime(), sendMWEvt);
     else if(simTime() < schedulingWarnTime) // warn correctly
@@ -388,15 +300,11 @@ void InteractingVehicle::announceNextMeeting() {
 
     simtime_t schedulingBreakTime = time - meetBreakBefore;
 
-    if(simTime() >= schedulingBreakTime && simTime() <= time) { // should have braked earlier
-        // TODO: this three lines are doubled... bad coding style i guess, fix it...
-        if(sendDriveAgainEvt->isScheduled())
-            cancelEvent(sendDriveAgainEvt);
-        scheduleAt(simTime() + breakDuration, sendDriveAgainEvt);
-
-        scheduleAt(simTime(), sendMBEvt);
+    if(simTime() > schedulingBreakTime && simTime() <= time) {
+        schedulingBreakTime = simTime();
     }
-    else if(simTime() < schedulingBreakTime) { // warn correctly
+
+    if(simTime() <= schedulingBreakTime) {
         if(sendDriveAgainEvt->isScheduled())
             cancelEvent(sendDriveAgainEvt);
         scheduleAt(schedulingBreakTime + breakDuration, sendDriveAgainEvt);
@@ -434,8 +342,6 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
                 EV << "Position already sent. Not resending packet" << std::endl;
             else {
                 last_sent = my_current_pos;
-                //veins::Coord my_current_pos = mobility->getPositionAt(simTime());
-                //double my_current_speed = mobility->getSpeed();
                 auto wiv = new InterVehicleMessage(getParentModule()->getFullName());
 
                 wiv->setPosition(my_current_pos);
@@ -469,30 +375,14 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             traciVehicle->setSpeed(0);
             getParentModule()->getDisplayString().setTagArg("i", 1, "grey");
 
-            //ongoing_meetings.push_back({ next_meeting.first, breakDuration });
-
-            //meetings.erase(next_meeting.first); // meeting over, so we can remove it from the list
-            //announceNextMeeting();
-
             break;
         }
         case SEND_DRIVE_AGAIN_EVT: {
-
-            // check if we are allowed to drive
-            EV << "getting next meeting..." << std::endl;
             auto next_meeting = getNextMeetingFromLeft();
             simtime_t time = next_meeting.second;
 
-            EV << "time is: " << time << std::endl;
-
-            if(time == simtime_t::getMaxTime()) {
-                continueDriving();
-                break;
-            }
-
             auto schedulingBreakTime = time - meetBreakBefore;
             if(time < simtime_t::getMaxTime() || (simTime() <= time && simTime() >= schedulingBreakTime)) { // do not drive
-                //announceNextMeeting();
                 scheduleAt(simTime() + breakDuration, sendDriveAgainEvt);
             } else { // drive
                 continueDriving();
