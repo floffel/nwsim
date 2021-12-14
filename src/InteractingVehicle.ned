@@ -24,6 +24,6 @@ simple InteractingVehicle extends DemoBaseApplLayer like IBaseApplLayer {
         double psInterval = default(1s) @unit(s); // the intervall between 2 ps messages
         double meetWarnBefore = default(7s) @unit(s); // the duration a car has before to meet when a warning shall appear
         double meetBreakBefore = default(3s) @unit(s); // the duration a car is before to meet when a break shall be initiated
-		double criticalMeetingDuration = default(.5s) @unit(s); // todo: a radius would be nicer
+		double criticalMeetingDuration = default(0.2s) @unit(s); // todo: a radius would be nicer
 		double breakDuration = default(3s) @unit(s); // the duration before a car shall resume after a meeting
 }

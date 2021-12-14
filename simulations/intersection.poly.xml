@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 
 <shapes>
-    <poly id="0" type="building.church" color="1.00,0.00,0.00" fill="1" layer="4" shape="60,10 65,10 65,15 60,15"/>
+    <poly id="0" type="building.church" color="1.00,0.00,0.00" fill="1" layer="4" shape="160,10 165,10 165,15 160,15"/>
 
 <!--
     <poly id="1" type="building.church" color="1.00,0.00,0.00" fill="1" layer="4" shape="60,10 100,10 100,50 60,50"/>

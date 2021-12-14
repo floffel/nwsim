@@ -1,14 +1,14 @@
 version 2
-run General-0-20211212-19:13:55-14973
+run General-0-20211214-15:00:04-21272
 attr configname General
-attr datetime 20211212-19:13:55
+attr datetime 20211214-15:00:04
 attr experiment General
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network org.car2x.veins.nodes.Scenario
-attr processid 14973
+attr processid 21272
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -57,17 +57,17 @@ scalar Scenario.node[0].appl generatedWSAs 0
 scalar Scenario.node[0].appl receivedWSAs 0
 scalar Scenario.node[0].nic.phy80211p busyTime 0.00010472727272727
 scalar Scenario.node[0].nic.mac1609_4 ReceivedUnicastPackets 0
-scalar Scenario.node[0].nic.mac1609_4 ReceivedBroadcasts 45
+scalar Scenario.node[0].nic.mac1609_4 ReceivedBroadcasts 48
 scalar Scenario.node[0].nic.mac1609_4 SentPackets 22
 scalar Scenario.node[0].nic.mac1609_4 SentAcknowledgements 0
 scalar Scenario.node[0].nic.mac1609_4 RetriesExceeded 0
-scalar Scenario.node[0].nic.mac1609_4 SNIRLostPackets 3
+scalar Scenario.node[0].nic.mac1609_4 SNIRLostPackets 0
 scalar Scenario.node[0].nic.mac1609_4 RXTXLostPackets 0
-scalar Scenario.node[0].nic.mac1609_4 TotalLostPackets 3
+scalar Scenario.node[0].nic.mac1609_4 TotalLostPackets 0
 scalar Scenario.node[0].nic.mac1609_4 DroppedPacketsInMac 0
 scalar Scenario.node[0].nic.mac1609_4 TooLittleTime 0
 scalar Scenario.node[0].nic.mac1609_4 TimesIntoBackoff 22
-scalar Scenario.node[0].nic.mac1609_4 SlotsBackoff 29
+scalar Scenario.node[0].nic.mac1609_4 SlotsBackoff 39
 scalar Scenario.node[0].nic.mac1609_4 NumInternalContention 0
 scalar Scenario.node[0].nic.mac1609_4 totalBusyTime 0.003382
 scalar Scenario.node[0].nic.mac1609_4 retriesExceeded:count 0
@@ -93,21 +93,21 @@ scalar Scenario.node[1].appl generatedBSMs 24
 scalar Scenario.node[1].appl receivedBSMs 0
 scalar Scenario.node[1].appl generatedWSAs 0
 scalar Scenario.node[1].appl receivedWSAs 0
-scalar Scenario.node[1].nic.phy80211p busyTime 0.0002
+scalar Scenario.node[1].nic.phy80211p busyTime 0.000198
 scalar Scenario.node[1].nic.mac1609_4 ReceivedUnicastPackets 0
 scalar Scenario.node[1].nic.mac1609_4 ReceivedBroadcasts 99
 scalar Scenario.node[1].nic.mac1609_4 SentPackets 24
 scalar Scenario.node[1].nic.mac1609_4 SentAcknowledgements 0
 scalar Scenario.node[1].nic.mac1609_4 RetriesExceeded 0
-scalar Scenario.node[1].nic.mac1609_4 SNIRLostPackets 1
+scalar Scenario.node[1].nic.mac1609_4 SNIRLostPackets 0
 scalar Scenario.node[1].nic.mac1609_4 RXTXLostPackets 0
-scalar Scenario.node[1].nic.mac1609_4 TotalLostPackets 1
+scalar Scenario.node[1].nic.mac1609_4 TotalLostPackets 0
 scalar Scenario.node[1].nic.mac1609_4 DroppedPacketsInMac 0
 scalar Scenario.node[1].nic.mac1609_4 TooLittleTime 0
 scalar Scenario.node[1].nic.mac1609_4 TimesIntoBackoff 24
-scalar Scenario.node[1].nic.mac1609_4 SlotsBackoff 40
+scalar Scenario.node[1].nic.mac1609_4 SlotsBackoff 46
 scalar Scenario.node[1].nic.mac1609_4 NumInternalContention 0
-scalar Scenario.node[1].nic.mac1609_4 totalBusyTime 0.005976
+scalar Scenario.node[1].nic.mac1609_4 totalBusyTime 0.005928
 scalar Scenario.node[1].nic.mac1609_4 retriesExceeded:count 0
 attr source org_car2x_veins_modules_mac_sigRetriesExceeded
 scalar Scenario.node[1].nic.mac1609_4 sentAcks:count 0
@@ -116,7 +116,7 @@ scalar Scenario.node[1].nic.mac1609_4 sentPackets:count 24
 attr source org_car2x_veins_modules_mac_sigSentPacket
 scalar Scenario.node[1].nic.mac1609_4 collisions:count 0
 attr source org_car2x_veins_modules_mac_sigCollision
-scalar Scenario.node[1].nic.mac1609_4 channelBusy:timeavg 0.000249
+scalar Scenario.node[1].nic.mac1609_4 channelBusy:timeavg 0.000247
 attr source org_car2x_veins_modules_mac_sigChannelBusy
 scalar Scenario.node[1].veinsmobility startTime 15
 scalar Scenario.node[1].veinsmobility totalTime 23
@@ -131,9 +131,9 @@ scalar Scenario.node[3].appl generatedBSMs 23
 scalar Scenario.node[3].appl receivedBSMs 0
 scalar Scenario.node[3].appl generatedWSAs 0
 scalar Scenario.node[3].appl receivedWSAs 0
-scalar Scenario.node[3].nic.phy80211p busyTime 0.00024208695652174
+scalar Scenario.node[3].nic.phy80211p busyTime 0.00024
 scalar Scenario.node[3].nic.mac1609_4 ReceivedUnicastPackets 0
-scalar Scenario.node[3].nic.mac1609_4 ReceivedBroadcasts 116
+scalar Scenario.node[3].nic.mac1609_4 ReceivedBroadcasts 115
 scalar Scenario.node[3].nic.mac1609_4 SentPackets 23
 scalar Scenario.node[3].nic.mac1609_4 SentAcknowledgements 0
 scalar Scenario.node[3].nic.mac1609_4 RetriesExceeded 0
@@ -143,9 +143,9 @@ scalar Scenario.node[3].nic.mac1609_4 TotalLostPackets 0
 scalar Scenario.node[3].nic.mac1609_4 DroppedPacketsInMac 0
 scalar Scenario.node[3].nic.mac1609_4 TooLittleTime 0
 scalar Scenario.node[3].nic.mac1609_4 TimesIntoBackoff 23
-scalar Scenario.node[3].nic.mac1609_4 SlotsBackoff 32
+scalar Scenario.node[3].nic.mac1609_4 SlotsBackoff 39
 scalar Scenario.node[3].nic.mac1609_4 NumInternalContention 0
-scalar Scenario.node[3].nic.mac1609_4 totalBusyTime 0.006695
+scalar Scenario.node[3].nic.mac1609_4 totalBusyTime 0.006647
 scalar Scenario.node[3].nic.mac1609_4 retriesExceeded:count 0
 attr source org_car2x_veins_modules_mac_sigRetriesExceeded
 scalar Scenario.node[3].nic.mac1609_4 sentAcks:count 0
@@ -154,7 +154,7 @@ scalar Scenario.node[3].nic.mac1609_4 sentPackets:count 23
 attr source org_car2x_veins_modules_mac_sigSentPacket
 scalar Scenario.node[3].nic.mac1609_4 collisions:count 0
 attr source org_car2x_veins_modules_mac_sigCollision
-scalar Scenario.node[3].nic.mac1609_4 channelBusy:timeavg 0.00029108695652174
+scalar Scenario.node[3].nic.mac1609_4 channelBusy:timeavg 0.000289
 attr source org_car2x_veins_modules_mac_sigChannelBusy
 scalar Scenario.node[3].veinsmobility startTime 19
 scalar Scenario.node[3].veinsmobility totalTime 22
@@ -165,34 +165,34 @@ scalar Scenario.node[3].veinsmobility totalDistance 250.66575350602
 scalar Scenario.node[3].veinsmobility totalCO2Emission 148.0611022533
 scalar Scenario.node[2].appl generatedWSMs 0
 scalar Scenario.node[2].appl receivedWSMs 0
-scalar Scenario.node[2].appl generatedBSMs 26
+scalar Scenario.node[2].appl generatedBSMs 25
 scalar Scenario.node[2].appl receivedBSMs 0
 scalar Scenario.node[2].appl generatedWSAs 0
 scalar Scenario.node[2].appl receivedWSAs 0
 scalar Scenario.node[2].nic.phy80211p busyTime 0.00024184615384615
 scalar Scenario.node[2].nic.mac1609_4 ReceivedUnicastPackets 0
-scalar Scenario.node[2].nic.mac1609_4 ReceivedBroadcasts 129
-scalar Scenario.node[2].nic.mac1609_4 SentPackets 26
+scalar Scenario.node[2].nic.mac1609_4 ReceivedBroadcasts 131
+scalar Scenario.node[2].nic.mac1609_4 SentPackets 25
 scalar Scenario.node[2].nic.mac1609_4 SentAcknowledgements 0
 scalar Scenario.node[2].nic.mac1609_4 RetriesExceeded 0
-scalar Scenario.node[2].nic.mac1609_4 SNIRLostPackets 2
+scalar Scenario.node[2].nic.mac1609_4 SNIRLostPackets 0
 scalar Scenario.node[2].nic.mac1609_4 RXTXLostPackets 0
-scalar Scenario.node[2].nic.mac1609_4 TotalLostPackets 2
+scalar Scenario.node[2].nic.mac1609_4 TotalLostPackets 0
 scalar Scenario.node[2].nic.mac1609_4 DroppedPacketsInMac 0
 scalar Scenario.node[2].nic.mac1609_4 TooLittleTime 0
-scalar Scenario.node[2].nic.mac1609_4 TimesIntoBackoff 26
-scalar Scenario.node[2].nic.mac1609_4 SlotsBackoff 32
+scalar Scenario.node[2].nic.mac1609_4 TimesIntoBackoff 25
+scalar Scenario.node[2].nic.mac1609_4 SlotsBackoff 42
 scalar Scenario.node[2].nic.mac1609_4 NumInternalContention 0
-scalar Scenario.node[2].nic.mac1609_4 totalBusyTime 0.007562
+scalar Scenario.node[2].nic.mac1609_4 totalBusyTime 0.007513
 scalar Scenario.node[2].nic.mac1609_4 retriesExceeded:count 0
 attr source org_car2x_veins_modules_mac_sigRetriesExceeded
 scalar Scenario.node[2].nic.mac1609_4 sentAcks:count 0
 attr source org_car2x_veins_modules_mac_sigSentAck
-scalar Scenario.node[2].nic.mac1609_4 sentPackets:count 26
+scalar Scenario.node[2].nic.mac1609_4 sentPackets:count 25
 attr source org_car2x_veins_modules_mac_sigSentPacket
 scalar Scenario.node[2].nic.mac1609_4 collisions:count 0
 attr source org_car2x_veins_modules_mac_sigCollision
-scalar Scenario.node[2].nic.mac1609_4 channelBusy:timeavg 0.00029084615384615
+scalar Scenario.node[2].nic.mac1609_4 channelBusy:timeavg 0.00028896153846154
 attr source org_car2x_veins_modules_mac_sigChannelBusy
 scalar Scenario.node[2].veinsmobility startTime 18
 scalar Scenario.node[2].veinsmobility totalTime 25
@@ -207,9 +207,9 @@ scalar Scenario.node[4].appl generatedBSMs 25
 scalar Scenario.node[4].appl receivedBSMs 0
 scalar Scenario.node[4].appl generatedWSAs 0
 scalar Scenario.node[4].appl receivedWSAs 0
-scalar Scenario.node[4].nic.phy80211p busyTime 0.00026304
+scalar Scenario.node[4].nic.phy80211p busyTime 0.00026112
 scalar Scenario.node[4].nic.mac1609_4 ReceivedUnicastPackets 0
-scalar Scenario.node[4].nic.mac1609_4 ReceivedBroadcasts 137
+scalar Scenario.node[4].nic.mac1609_4 ReceivedBroadcasts 136
 scalar Scenario.node[4].nic.mac1609_4 SentPackets 25
 scalar Scenario.node[4].nic.mac1609_4 SentAcknowledgements 0
 scalar Scenario.node[4].nic.mac1609_4 RetriesExceeded 0
@@ -219,9 +219,9 @@ scalar Scenario.node[4].nic.mac1609_4 TotalLostPackets 0
 scalar Scenario.node[4].nic.mac1609_4 DroppedPacketsInMac 0
 scalar Scenario.node[4].nic.mac1609_4 TooLittleTime 0
 scalar Scenario.node[4].nic.mac1609_4 TimesIntoBackoff 25
-scalar Scenario.node[4].nic.mac1609_4 SlotsBackoff 38
+scalar Scenario.node[4].nic.mac1609_4 SlotsBackoff 32
 scalar Scenario.node[4].nic.mac1609_4 NumInternalContention 0
-scalar Scenario.node[4].nic.mac1609_4 totalBusyTime 0.007801
+scalar Scenario.node[4].nic.mac1609_4 totalBusyTime 0.007753
 scalar Scenario.node[4].nic.mac1609_4 retriesExceeded:count 0
 attr source org_car2x_veins_modules_mac_sigRetriesExceeded
 scalar Scenario.node[4].nic.mac1609_4 sentAcks:count 0
@@ -230,7 +230,7 @@ scalar Scenario.node[4].nic.mac1609_4 sentPackets:count 25
 attr source org_car2x_veins_modules_mac_sigSentPacket
 scalar Scenario.node[4].nic.mac1609_4 collisions:count 0
 attr source org_car2x_veins_modules_mac_sigCollision
-scalar Scenario.node[4].nic.mac1609_4 channelBusy:timeavg 0.00031204
+scalar Scenario.node[4].nic.mac1609_4 channelBusy:timeavg 0.00031012
 attr source org_car2x_veins_modules_mac_sigChannelBusy
 scalar Scenario.node[4].veinsmobility startTime 21
 scalar Scenario.node[4].veinsmobility totalTime 24

@@ -20,6 +20,7 @@
 #include <tuple>
 #include <map>
 #include <cmath>
+#include <math.h>
 #include <omnetpp.h>
 #include "veins/base/utils/FWMath.h"
 #include "veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
@@ -89,17 +90,22 @@ protected:
 
     virtual void handlePositionUpdate(cObject* obj) override;
 
-    virtual double getAverageSpeed(std::vector<std::pair<veins::Coord, double>> hist);
 
-    virtual bool fromLeft(std::string name);
+    virtual bool isFromLeft(std::string name);
 
     virtual void continueDriving();
 
+    virtual double getAverageSpeed(std::vector<std::tuple<veins::Coord, double, simtime_t>> hist);
+
+    virtual double getAverageAcceleration(std::vector<std::tuple<veins::Coord, double, simtime_t>> hist);
+
     virtual std::pair<std::string, simtime_t> getNextMeetingFromLeft();
 
-    std::map<std::string, std::vector<std::pair<veins::Coord, double>>> enemys_last_position; //and speed
+    std::map<std::string, std::vector<std::tuple<veins::Coord, double, simtime_t>>> enemysDrivingHistory;
+    std::vector<std::tuple<veins::Coord, double, simtime_t>> myDrivingHistory;
 
-    std::vector<std::pair<veins::Coord, double>> my_last_position;
+    // to catch the last send position and not resending it
+    veins::Coord last_sent;
 
     // hols the ongoing meetings, e.g. the blocklist
     //std::vector<std::pair<std::string, simtime_t>> ongoing_meetings;
