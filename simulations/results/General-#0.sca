@@ -1,14 +1,14 @@
 version 2
-run General-0-20211214-15:31:18-22257
+run General-0-20211216-22:05:00-5607
 attr configname General
-attr datetime 20211214-15:31:18
+attr datetime 20211216-22:05:00
 attr experiment General
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network org.car2x.veins.nodes.Scenario
-attr processid 22257
+attr processid 5607
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -67,7 +67,7 @@ scalar Scenario.node[0].nic.mac1609_4 TotalLostPackets 0
 scalar Scenario.node[0].nic.mac1609_4 DroppedPacketsInMac 0
 scalar Scenario.node[0].nic.mac1609_4 TooLittleTime 0
 scalar Scenario.node[0].nic.mac1609_4 TimesIntoBackoff 22
-scalar Scenario.node[0].nic.mac1609_4 SlotsBackoff 39
+scalar Scenario.node[0].nic.mac1609_4 SlotsBackoff 37
 scalar Scenario.node[0].nic.mac1609_4 NumInternalContention 0
 scalar Scenario.node[0].nic.mac1609_4 totalBusyTime 0.003382
 scalar Scenario.node[0].nic.mac1609_4 retriesExceeded:count 0

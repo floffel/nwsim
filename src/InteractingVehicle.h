@@ -53,9 +53,10 @@ public:
     // we have to take different ids becourse of DemoBaseApplLayer, so we'll go from 999 to 0
     enum InteractingVehicleMessageKinds {
         SEND_PS_EVT = 999,
-        SEND_MW_EVT = 998,
-        SEND_MB_EVT = 997,
-        SEND_DRIVE_AGAIN_EVT = 996
+        SEND_MTW_EVT = 998,
+        SEND_MTC_EVT = 997,
+        SEND_MB_EVT = 996,
+        SEND_DRIVE_AGAIN_EVT = 995
     };
 
 protected:
@@ -104,6 +105,13 @@ protected:
     std::map<std::string, std::vector<std::tuple<veins::Coord, double, simtime_t>>> enemysDrivingHistory;
     std::vector<std::tuple<veins::Coord, double, simtime_t>> myDrivingHistory;
 
+    // histories to only send warnings one time
+    // will be cleared once a car continues driving after a meeting
+    // TODO: those will never be emtied for the car that comes from the right, fix this, future me!... :)
+    std::map<std::string, bool> timeWarnHistory;
+    std::map<std::string, bool> colissionWarnHistory;
+    std::map<std::string, bool> breakWarnHistory;
+
     // to catch the last send position and not resending it
     veins::Coord last_sent;
 
@@ -116,8 +124,10 @@ protected:
     veins::TraCICommandInterface* traci;
     veins::TraCICommandInterface::Vehicle* traciVehicle;
 
-    /* Duration a car has before to meet when a warning shall appear */
-    simtime_t meetWarnBefore;
+    /* Duration a car has before a meeting occurs when the time warning shall appear */
+    simtime_t meetTimeWarnBefore;
+    /* Duration a car has before a meeting occurs when the collision warning shall appear */
+    simtime_t meetCollissionWarnBefore;
     /* Duration a car is before to meet when a break shall be initiated */
     simtime_t meetBreakBefore;
 
@@ -130,8 +140,10 @@ protected:
 
     /* messages for periodic events, namely the position/speed update transmissions */
     cMessage* sendPSEvt;
-    /* messages for MeetingWarning */
-    cMessage* sendMWEvt;
+    /* messages for MeetingTimeWarning */
+    cMessage* sendMTWEvt;
+    /* messages for MeetingColissionWarning */
+    cMessage* sendMCWEvt;
     /* messages for MeetingBreaking */
     cMessage* sendMBEvt;
     /* messages for announcing (potential) meetings and for triggering actions */

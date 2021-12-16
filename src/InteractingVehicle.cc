@@ -13,17 +13,17 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#include <vector>
 #include "InteractingVehicle.h"
 
 Define_Module(InteractingVehicle);
 
 InteractingVehicle::~InteractingVehicle()
 {
-    cancelAndDelete(sendPSEvt);
     cancelAndDelete(sendDriveAgainEvt);
-    cancelAndDelete(sendMWEvt);
+    cancelAndDelete(sendMTWEvt);
+    cancelAndDelete(sendMCWEvt);
     cancelAndDelete(sendMBEvt);
+    cancelAndDelete(sendPSEvt);
 }
 
 void InteractingVehicle::initialize(int stage)
@@ -35,8 +35,8 @@ void InteractingVehicle::initialize(int stage)
         // initialize pointers to other modules
         if (veins::FindModule<veins::TraCIMobility*>::findSubModule(getParentModule())) {
             mobility = veins::TraCIMobilityAccess().get(getParentModule());
-            traci = mobility->getCommandInterface(); // hier gib es getRouteIds und getPlannedRouteIds
-            traciVehicle = mobility->getVehicleCommandInterface(); // hier gibt es getLanePosition()
+            traci = mobility->getCommandInterface();
+            traciVehicle = mobility->getVehicleCommandInterface();
 
             /***
              * Offene Fragen:
@@ -47,14 +47,16 @@ void InteractingVehicle::initialize(int stage)
 
         // get parameters
         breakDuration = par("breakDuration");
-        meetWarnBefore = par("meetWarnBefore");
+        meetTimeWarnBefore = par("meetTimeWarnBefore");
+        meetCollissionWarnBefore = par("meetCollissionWarnBefore");
         meetBreakBefore = par("meetBreakBefore");
         criticalMeetingDuration = par("criticalMeetingDuration");
         psInterval = par("psInterval");
+
         sendPSEvt = new cMessage("PSEvt", SEND_PS_EVT);
         sendDriveAgainEvt = new cMessage("DriveAgainEvt", SEND_DRIVE_AGAIN_EVT);
-
-        sendMWEvt = new cMessage("MeetingWarningEvt", SEND_MW_EVT);
+        sendMCWEvt = new cMessage("MeetingCollisionWarningEvt", SEND_MTC_EVT);
+        sendMTWEvt = new cMessage("MeetingTimeWarningEvt", SEND_MTW_EVT);
         sendMBEvt = new cMessage("MeetingBreakingEvt", SEND_MB_EVT);
     }
     else if (stage == 1) {
@@ -70,7 +72,6 @@ void InteractingVehicle::initialize(int stage)
 
 void InteractingVehicle::handleMessage(cMessage* msg)
 {
-
     // handle self messages (e.g. timers) in a separate methods
     if (msg->isSelfMessage()) {
         handleSelfMsg(msg);
@@ -277,20 +278,28 @@ void InteractingVehicle::announceNextMeeting() {
     auto next_meeting = getNextMeetingTime();
     simtime_t time = next_meeting.second;
 
-    if(sendMWEvt->isScheduled())
-        cancelEvent(sendMWEvt);
+    if(sendMTWEvt->isScheduled())
+        cancelEvent(sendMTWEvt);
+    if(sendMCWEvt->isScheduled())
+        cancelEvent(sendMCWEvt);
     if(sendMBEvt->isScheduled())
         cancelEvent(sendMBEvt);
 
     if(time == simtime_t::getMaxTime())
         return;
 
-    simtime_t schedulingWarnTime = time - meetWarnBefore;
+    simtime_t schedulingTimeWarnTime = time - meetTimeWarnBefore;
+    simtime_t schedulingCollisionWarnTime = time - meetCollissionWarnBefore;
 
-    if(simTime() >= schedulingWarnTime && simTime() <= time) // should have warned earlier
-        scheduleAt(simTime(), sendMWEvt);
-    else if(simTime() < schedulingWarnTime) // warn correctly
-        scheduleAt(schedulingWarnTime, sendMWEvt);
+    if(simTime() >= schedulingTimeWarnTime && simTime() <= time) // should have warned earlier
+        scheduleAt(simTime(), sendMTWEvt);
+    else if(simTime() < schedulingTimeWarnTime) // warn correctly
+        scheduleAt(schedulingTimeWarnTime, sendMTWEvt);
+
+    if(simTime() >= schedulingCollisionWarnTime && simTime() <= time) // should have warned earlier
+        scheduleAt(simTime(), sendMCWEvt);
+    else if(simTime() < schedulingCollisionWarnTime) // warn correctly
+        scheduleAt(schedulingCollisionWarnTime, sendMCWEvt);
 
     next_meeting = getNextMeetingFromLeft();
     time = next_meeting.second;
@@ -300,9 +309,8 @@ void InteractingVehicle::announceNextMeeting() {
 
     simtime_t schedulingBreakTime = time - meetBreakBefore;
 
-    if(simTime() > schedulingBreakTime && simTime() <= time) {
+    if(simTime() > schedulingBreakTime && simTime() <= time)
         schedulingBreakTime = simTime();
-    }
 
     if(simTime() <= schedulingBreakTime) {
         if(sendDriveAgainEvt->isScheduled())
@@ -354,14 +362,31 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             scheduleAt(simTime() + psInterval, sendPSEvt);
             break;
         }
-        case SEND_MW_EVT: { // Warning triggered
+        case SEND_MTW_EVT: { // TimeWarning triggered
             auto next_meeting = getNextMeetingTime();
 
-            if(next_meeting.second == simtime_t::getMaxTime()) // meeting was deleted
+            if(next_meeting.second == simtime_t::getMaxTime() ||  // meeting was deleted
+                    timeWarnHistory[next_meeting.first]) // we warned before
                 break;
 
+            timeWarnHistory[next_meeting.first] = true;
+
             EV << getParentModule()->getFullName() << "warning, " << next_meeting.first << "is near!" << std::endl;
-            findHost()->bubble("Warning!");
+            findHost()->bubble("Timewarning");
+            getParentModule()->getDisplayString().setTagArg("i", 1, "orange");
+            break;
+        }
+        case SEND_MTC_EVT: { // CollisionWarning triggered
+            auto next_meeting = getNextMeetingTime();
+
+            if(next_meeting.second == simtime_t::getMaxTime() || // meeting was deleted
+                    colissionWarnHistory[next_meeting.first]) // we warned before
+                break;
+
+            colissionWarnHistory[next_meeting.first] = true;
+
+            EV << getParentModule()->getFullName() << "warning, " << next_meeting.first << "is near!" << std::endl;
+            findHost()->bubble("Collisionwarning");
             getParentModule()->getDisplayString().setTagArg("i", 1, "red");
             break;
         }
@@ -370,8 +395,13 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             if(next_meeting.second == simtime_t::getMaxTime())
                 break; // no meeting found
 
-            EV << getParentModule()->getFullName() << ": Breaking in favor of enemy car " << next_meeting.first << std::endl;
-            findHost()->bubble("Breaking!");
+            if(!breakWarnHistory[next_meeting.first]) { // we did not announce the breaking
+                EV << getParentModule()->getFullName() << ": Breaking in favor of enemy car " << next_meeting.first << std::endl;
+                findHost()->bubble("Breaking!");
+            }
+
+            breakWarnHistory[next_meeting.first] = true;
+
             traciVehicle->setSpeed(0);
             getParentModule()->getDisplayString().setTagArg("i", 1, "grey");
 
@@ -380,6 +410,11 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
         case SEND_DRIVE_AGAIN_EVT: {
             auto next_meeting = getNextMeetingFromLeft();
             simtime_t time = next_meeting.second;
+
+            // delete all histories, worst we can get are false negatives
+            breakWarnHistory.empty();
+            timeWarnHistory.empty();
+            colissionWarnHistory.empty();
 
             auto schedulingBreakTime = time - meetBreakBefore;
             if(time < simtime_t::getMaxTime() || (simTime() <= time && simTime() >= schedulingBreakTime)) { // do not drive
