@@ -56,7 +56,9 @@ public:
         SEND_MTW_EVT = 998,
         SEND_MTC_EVT = 997,
         SEND_MB_EVT = 996,
-        SEND_DRIVE_AGAIN_EVT = 995
+        SEND_DRIVE_AGAIN_EVT = 995,
+        SEND_SD_EVT = 994,
+        SEND_USD_EVT = 993
     };
 
 protected:
@@ -100,6 +102,9 @@ protected:
 
     virtual double getAverageAcceleration(std::vector<std::tuple<veins::Coord, double, simtime_t>> hist);
 
+    virtual void addDrivingHistory();
+    virtual void setMeetingAvoidingSpeed();
+
     virtual std::pair<std::string, simtime_t> getNextMeetingFromLeft();
 
     std::map<std::string, std::vector<std::tuple<veins::Coord, double, simtime_t>>> enemysDrivingHistory;
@@ -115,10 +120,10 @@ protected:
     // to catch the last send position and not resending it
     veins::Coord last_sent;
 
-    // hold the possible meeting messages to trigger a warning etc.
-    //std::map<std::string, cMessage*> meeting_messages;
-    // bool holds the "was warned already", 3sec before
-    std::map<std::string, simtime_t> meetings;
+    // holds the (possible) meetings
+    // bool holds the "am I the last one attending the meeting" switch
+    // double holds the speed we would need to drive to not attend the meeting
+    std::map<std::string, std::tuple<simtime_t, bool, double>> meetings;
 
     veins::TraCIMobility* mobility;
     veins::TraCICommandInterface* traci;
@@ -131,7 +136,16 @@ protected:
     /* Duration a car is before to meet when a break shall be initiated */
     simtime_t meetBreakBefore;
 
+    /* Duration (in seconds) when a meeting will occur, if two cars are at the same point */
     double criticalMeetingDuration;
+    /* Speed, wich will be substracted from maxSpeed of a car, to drive a bit slower, trying to avoid a meeting */
+    double slowDownDiffSpeed;
+
+    /* save initial max Speed set by TraCI for slowing down */
+    double maxSpeed;
+
+    /* Duration the car slows down to avoid a crash */
+    simtime_t slowDrivingDuration;
 
     /* Duration before a car shall resume after a meeting */
     simtime_t breakDuration;
@@ -148,6 +162,10 @@ protected:
     cMessage* sendMBEvt;
     /* messages for announcing (potential) meetings and for triggering actions */
     cMessage* sendDriveAgainEvt;
+    /* messages for slowing Down */
+    cMessage* sendSDEvt;
+    /* messages for un-slowing Down */
+    cMessage* sendUSDEvt;
 };
 
 #endif
