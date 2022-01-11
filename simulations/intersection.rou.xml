@@ -5,5 +5,5 @@
     <route edges="street_top_to_middle street_middle_to_left" color="yellow" id="route_top_to_left"/>
 
     <flow id="fl_right_to_left" color="255,90,0" route="route_right_to_left" probability=".1"/> 
-    <flow id="fl_top_to_left" color="255,90,0" route="route_top_to_left" probability=".2"/>
+    <flow id="fl_top_to_left" color="255,90,0" route="route_top_to_left" probability=".15"/>
 </routes>

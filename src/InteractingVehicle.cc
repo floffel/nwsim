@@ -442,27 +442,6 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             findHost()->bubble("Timewarning");
             getParentModule()->getDisplayString().setTagArg("i", 1, "orange");
 
-            /*if(std::get<1>(meetings[next_meeting.first])) { // we are last attending the meeting,
-                // so we'll slow down a bit now, so we might miss that meeting
-                double new_speed = traciVehicle->getSpeed() - slowDownDiffSpeed;
-                //double new_speed = 30;
-                if(new_speed < 0)
-                    new_speed = 5; // never drive slower than 5, todo: parameterise?
-
-                EV << getParentModule()->getFullName() << ": Slowing down in favor of enemy car, setting max_speed to: " << new_speed << std::endl;
-                findHost()->bubble("slowing down");
-
-                traciVehicle->setSpeed(new_speed);
-                addDrivingHistory(); // we have to add it to our driving history, so we can calculate, if we realy meet
-                //traciVehicle->setMaxSpeed(new_speed);
-                //scheduleAt(simTime() + slowDrivingDuration, sendUSDEvt);
-            }*/
-
-            // if we attend the meeting later than the enemy,
-            // we'll slow down a bit, so we are avoide the meeting
-            //if(next_meeting.second > )
-
-
             break;
         }
         case SEND_MTC_EVT: { // CollisionWarning triggered
