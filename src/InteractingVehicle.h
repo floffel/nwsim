@@ -93,6 +93,7 @@ protected:
 
     virtual void handlePositionUpdate(cObject* obj) override;
 
+    virtual void refreshDisplay() const override;
 
     virtual bool isFromLeft(std::string name);
 
@@ -137,15 +138,9 @@ protected:
     simtime_t meetBreakBefore;
 
     /* Duration (in seconds) when a meeting will occur, if two cars are at the same point */
-    double criticalMeetingDuration;
-    /* Speed, wich will be substracted from maxSpeed of a car, to drive a bit slower, trying to avoid a meeting */
-    double slowDownDiffSpeed;
-
+    simtime_t criticalMeetingDuration;
     /* save initial max Speed set by TraCI for slowing down */
     double maxSpeed;
-
-    /* Duration the car slows down to avoid a crash */
-    simtime_t slowDrivingDuration;
 
     /* Duration before a car shall resume after a meeting */
     simtime_t breakDuration;
@@ -162,10 +157,6 @@ protected:
     cMessage* sendMBEvt;
     /* messages for announcing (potential) meetings and for triggering actions */
     cMessage* sendDriveAgainEvt;
-    /* messages for slowing Down */
-    cMessage* sendSDEvt;
-    /* messages for un-slowing Down */
-    cMessage* sendUSDEvt;
 };
 
 #endif

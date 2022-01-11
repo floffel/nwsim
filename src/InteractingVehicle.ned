@@ -21,12 +21,10 @@ import org.car2x.veins.modules.application.ieee80211p.DemoBaseApplLayer;
 simple InteractingVehicle extends DemoBaseApplLayer like IBaseApplLayer {   
     parameters:
         @class(InteractingVehicle);
-        double psInterval = default(.2s) @unit(s); // the intervall between 2 ps messages
+        double psInterval = default(.8s) @unit(s); // the intervall between 2 ps messages
         double meetTimeWarnBefore = default(7s) @unit(s); // the duration a car has before a meeting occurs when the time warning shall appear
         double meetCollissionWarnBefore = default(3s) @unit(s); // the duration a car has before a meeting occurs when the colission warning shall appear
         double meetBreakBefore = default(2s) @unit(s); // the duration a car is before to meet when a break shall be initiated
 		double breakDuration = default(3s) @unit(s); // the duration before a car shall resume after a meeting
-		double slowDrivingDuration = default(4s) @unit(s); // the duration a car slows down to avoid a crash
-		double slowDownDiffSpeed = default(20); // slow .... units down for trying to avoid a crash
 		double criticalMeetingDuration = default(0.2s) @unit(s);
 }

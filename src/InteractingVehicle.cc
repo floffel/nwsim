@@ -24,9 +24,6 @@ InteractingVehicle::~InteractingVehicle()
     cancelAndDelete(sendMCWEvt);
     cancelAndDelete(sendMBEvt);
     cancelAndDelete(sendPSEvt);
-    cancelAndDelete(sendSDEvt);
-    cancelAndDelete(sendUSDEvt);
-
 }
 
 void InteractingVehicle::initialize(int stage)
@@ -49,22 +46,18 @@ void InteractingVehicle::initialize(int stage)
         }
 
         // get parameters
-        slowDownDiffSpeed = par("slowDownDiffSpeed");
-        slowDrivingDuration = par("slowDrivingDuration");
         breakDuration = par("breakDuration");
         meetTimeWarnBefore = par("meetTimeWarnBefore");
         meetCollissionWarnBefore = par("meetCollissionWarnBefore");
         meetBreakBefore = par("meetBreakBefore");
-        criticalMeetingDuration = par("criticalMeetingDuration");
         psInterval = par("psInterval");
+        criticalMeetingDuration = par("criticalMeetingDuration");
 
         sendPSEvt = new cMessage("PSEvt", SEND_PS_EVT);
         sendDriveAgainEvt = new cMessage("DriveAgainEvt", SEND_DRIVE_AGAIN_EVT);
         sendMCWEvt = new cMessage("MeetingCollisionWarningEvt", SEND_MTC_EVT);
         sendMTWEvt = new cMessage("MeetingTimeWarningEvt", SEND_MTW_EVT);
         sendMBEvt = new cMessage("MeetingBreakingEvt", SEND_MB_EVT);
-        sendSDEvt = new cMessage("SlowDownEvt", SEND_SD_EVT);
-        sendUSDEvt = new cMessage("UnSlowDownEvt", SEND_USD_EVT);
     }
     else if (stage == 1) {
         // Initializing members that require initialized other modules goes here
@@ -76,6 +69,12 @@ void InteractingVehicle::initialize(int stage)
         scheduleAt(simTime() + randomOffset, sendPSEvt);
         // globalStats = FindModule<GlobalStatistics*>::findSubModule(getParentModule()->getParentModule());
     }
+}
+
+void InteractingVehicle::refreshDisplay() const {
+    char buf[11+15];
+    sprintf(buf, "max speed:\n%lf", traciVehicle->getMaxSpeed());
+    findHost()->getDisplayString().setTagArg("t", 0, buf);
 }
 
 void InteractingVehicle::handleMessage(cMessage* msg)
@@ -132,10 +131,6 @@ void InteractingVehicle::calculateMeetings() {
 
     meetings.clear();
 
-    // only calculate new meetings if we drive more than 1% of the normal speed
-    // TODO: if this would be a real car, a drive could (possibly) break,
-    //       though normally the breaking system should still work, even under 1%...
-    //       as it is now, it will only break if any unexpected happens, normally we do speed avoidance calculation
     for(const auto& [name, history] : enemysDrivingHistory) {
         EV << "[" << getParentModule()->getFullName() << "]"
                 << "calculating if we meet with " << name << std::endl;
@@ -194,38 +189,27 @@ void InteractingVehicle::calculateMeetings() {
 
             double time_diff = std::abs(enemy_time - my_time);
 
-            if(time_diff < criticalMeetingDuration // we are in the critical meeting duration
+            if(time_diff < criticalMeetingDuration.dbl() // we are in the critical meeting duration
                     && traciVehicle->getSpeed() <= maxSpeed*0.2) { // and we already slowed down in favor of the car
                 //double middle = (sqrt(pow(enemy_time, 2.0)) + sqrt(pow(my_time,2.0)))/2.0;
 
                 EV << "  planning meeting with " << name << " in " << enemy_time << std::endl;
 
-
-                // TODO: hier müssen wir berechnen, wie langsam wir fahren müssen
-                // um das auto zu umgehen. So können wir dann am ende
-                // das rausfinden mit der kleinsten geschwindigkeit, und diese fahren
-
-                double time_to_pass = criticalMeetingDuration * 1.1 + my_time; // - time_diff
-
-                double new_speed = dist_my/time_to_pass;
-
-                if(traciVehicle->getSpeed() > maxSpeed * .5) // only add meeting, if we are driving minimum 5% of the speed
-                    meetings[enemy_name] = {simTime() + enemy_time, (my_time > enemy_time), new_speed}; // we use the enemy time here,
+                meetings[enemy_name] = {simTime() + my_time, (my_time > enemy_time), 0};
             } else {
                 EV << "  " << "cancel, criticalMeetingDuration not reached:" << time_diff << std::endl;
             }
 
             // set the meeting avoidance speed:
-            {
-                double time_to_pass = my_time + criticalMeetingDuration*2.2;
-                double speed_to_avoid = dist_my/time_to_pass;
-                //speed_to_avoid *= .95; // slow down a bit more
-                // TODO: would be cool to calculate the acceleration needed
+            double time_to_pass = my_time < enemy_time ? my_time : enemy_time; // take the smaller amont of time time
+            time_to_pass += time_diff + criticalMeetingDuration.dbl()*my_acc; // add the difference and the critical meeting duration
+            double speed_to_avoid = dist_my/time_to_pass;
 
-                if(speed_to_avoid > 0 && speed_to_avoid < new_speed
-                    && my_time >= enemy_time) { // if we are attending last
-                    new_speed = speed_to_avoid;
-                }
+            if(speed_to_avoid > 0 && speed_to_avoid < new_speed //) {
+                  //&& isFromLeft(enemy_name)) { // only do it when we are from left
+                && dist_my > dist_enemy // if we are attending last
+                && dist_my > 0) { // no backward calculation
+                new_speed = speed_to_avoid;
             }
         }
     }
@@ -236,7 +220,7 @@ void InteractingVehicle::calculateMeetings() {
 
         if(new_speed != traciVehicle->getMaxSpeed()) {
             traciVehicle->setMaxSpeed(new_speed);
-            addDrivingHistory();
+            //addDrivingHistory();
         }
     }
     announceNextMeeting();
@@ -257,9 +241,9 @@ void InteractingVehicle::addDrivingHistory() {
     auto time = simTime();
     auto pos = mobility->getPositionAt(time);
     auto speed = mobility->getSpeed();
-    if(size > 0 && (std::get<0>(myDrivingHistory[size-1]) == pos // position not updated
-                    && std::get<1>(myDrivingHistory[size-1]) == speed // speed not updated
-                    && std::get<2>(myDrivingHistory[size-1]) == time)) { // time not updated
+    if(size > 0 && std::get<0>(myDrivingHistory[size-1]) == pos) { // position not updated
+                    //&& std::get<1>(myDrivingHistory[size-1]) == speed // speed not updated
+                    //&& std::get<2>(myDrivingHistory[size-1]) == time)) { // time not updated
         // do nothing
         EV << "position not update, not pushing back" << std::endl;
     } else {
@@ -528,33 +512,6 @@ void InteractingVehicle::handleSelfMsg(cMessage* msg)
             } else { // drive
                 continueDriving();
             }
-            break;
-        }
-        case SEND_SD_EVT: {
-            if(sendUSDEvt->isScheduled())
-                break;
-
-            /*if(maxSpeed - traciVehicle->getSpeed() <= slowDownDiffSpeed) // already slowed down a bit...
-                break;
-
-            if(sendUSDEvt->isScheduled())
-                cancelEvent(sendUSDEvt);
-            */
-            double new_speed = maxSpeed - slowDownDiffSpeed;
-
-            EV << getParentModule()->getFullName() << ": Slowing down in favor of enemy car, setting max_speed to: " << new_speed << std::endl;
-            findHost()->bubble("slowing down!");
-
-            traciVehicle->setSpeed(5);
-            //traciVehicle->setMaxSpeed(new_speed);
-            scheduleAt(simTime() + slowDrivingDuration, sendUSDEvt);
-            break;
-        }
-        case SEND_USD_EVT: {
-            traciVehicle->setSpeed(traciVehicle->getMaxSpeed());
-            findHost()->bubble("resetting speed");
-
-            //traciVehicle->setMaxSpeed(maxSpeed);
             break;
         }
     }
