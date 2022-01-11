@@ -113,12 +113,10 @@ double InteractingVehicle::getAverageAcceleration(std::vector<std::tuple<veins::
 }
 
 void InteractingVehicle::calculateMeetings() {
-    // reset meeting-avoiding speed limit
-    //traciVehicle->setMaxSpeed(maxSpeed);
-    double new_speed = maxSpeed;
-
     if(myDrivingHistory.size() < 2)
         return;
+
+    double new_speed = maxSpeed;
 
     veins::Coord my_current_pos = std::get<0>(myDrivingHistory[myDrivingHistory.size()-1]);
     veins::Coord my_last_pos = std::get<0>(myDrivingHistory[myDrivingHistory.size()-2]);
@@ -138,10 +136,6 @@ void InteractingVehicle::calculateMeetings() {
     // TODO: if this would be a real car, a drive could (possibly) break,
     //       though normally the breaking system should still work, even under 1%...
     //       as it is now, it will only break if any unexpected happens, normally we do speed avoidance calculation
-    if(traciVehicle->getSpeed() > maxSpeed*0.01) {
-        return;
-    }
-
     for(const auto& [name, history] : enemysDrivingHistory) {
         EV << "[" << getParentModule()->getFullName() << "]"
                 << "calculating if we meet with " << name << std::endl;
@@ -200,7 +194,8 @@ void InteractingVehicle::calculateMeetings() {
 
             double time_diff = std::abs(enemy_time - my_time);
 
-            if(time_diff < criticalMeetingDuration) {
+            if(time_diff < criticalMeetingDuration // we are in the critical meeting duration
+                    && traciVehicle->getSpeed() <= maxSpeed*0.2) { // and we already slowed down in favor of the car
                 //double middle = (sqrt(pow(enemy_time, 2.0)) + sqrt(pow(my_time,2.0)))/2.0;
 
                 EV << "  planning meeting with " << name << " in " << enemy_time << std::endl;
@@ -214,35 +209,36 @@ void InteractingVehicle::calculateMeetings() {
 
                 double new_speed = dist_my/time_to_pass;
 
-                meetings[enemy_name] = {simTime() + enemy_time, (my_time > enemy_time), new_speed}; // we use the enemy time here,
+                if(traciVehicle->getSpeed() > maxSpeed * .5) // only add meeting, if we are driving minimum 5% of the speed
+                    meetings[enemy_name] = {simTime() + enemy_time, (my_time > enemy_time), new_speed}; // we use the enemy time here,
             } else {
                 EV << "  " << "cancel, criticalMeetingDuration not reached:" << time_diff << std::endl;
             }
 
             // set the meeting avoidance speed:
             {
-                // only do avoidance speed reduction, if we drive more than 10% of the normal speed
-                double time_to_pass = criticalMeetingDuration * 1.1 + my_time; // 10% more time
+                double time_to_pass = my_time + criticalMeetingDuration*2.2;
                 double speed_to_avoid = dist_my/time_to_pass;
-                speed_to_avoid *= .9; // slow down a bit more
+                //speed_to_avoid *= .95; // slow down a bit more
                 // TODO: would be cool to calculate the acceleration needed
 
                 if(speed_to_avoid > 0 && speed_to_avoid < new_speed
-                   && my_time > enemy_time) { // if we are attending last
+                    && my_time >= enemy_time) { // if we are attending last
                     new_speed = speed_to_avoid;
                 }
             }
-
         }
     }
 
-    /* set speed as the car-avoidance-system */
-    EV << "slowing down in favor of : enemy_name, setting new max speed to: " <<  new_speed << std::endl;
+    {
+        /* set speed as car-avoidance-system */
+        EV << "slowing down in favor of : enemy_name, setting new max speed to: " <<  new_speed << std::endl;
 
-    traciVehicle->setMaxSpeed(new_speed);
-    if(traciVehicle->getSpeed() > new_speed)
-        traciVehicle->setSpeed(new_speed);
-
+        if(new_speed != traciVehicle->getMaxSpeed()) {
+            traciVehicle->setMaxSpeed(new_speed);
+            addDrivingHistory();
+        }
+    }
     announceNextMeeting();
     //setMeetingAvoidingSpeed();
 }
@@ -258,12 +254,16 @@ void InteractingVehicle::onInterVehicleMessage(InterVehicleMessage *ivmsg) {
 
 void InteractingVehicle::addDrivingHistory() {
     int size = myDrivingHistory.size();
-    auto pos = mobility->getPositionAt(simTime());
-    if(size > 0 && std::get<0>(myDrivingHistory[size-1]) == pos) {
+    auto time = simTime();
+    auto pos = mobility->getPositionAt(time);
+    auto speed = mobility->getSpeed();
+    if(size > 0 && (std::get<0>(myDrivingHistory[size-1]) == pos // position not updated
+                    && std::get<1>(myDrivingHistory[size-1]) == speed // speed not updated
+                    && std::get<2>(myDrivingHistory[size-1]) == time)) { // time not updated
         // do nothing
         EV << "position not update, not pushing back" << std::endl;
     } else {
-        myDrivingHistory.push_back({ pos, mobility->getSpeed(), simTime() });
+        myDrivingHistory.push_back({ pos, speed, time });
         calculateMeetings();
     }
 }
@@ -412,7 +412,7 @@ void InteractingVehicle::continueDriving()
 {
     findHost()->bubble("Driving");
     getParentModule()->getDisplayString().setTagArg("i", 1, "green");
-    traciVehicle->setSpeed(50);
+    traciVehicle->setSpeed(maxSpeed);
     addDrivingHistory();
 }
 
