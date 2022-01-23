@@ -107,7 +107,8 @@ double InteractingVehicle::getAverageAcceleration(std::vector<std::tuple<veins::
 
     double length = (std::get<0>(hist[1]) - std::get<0>(hist[0])).length();
     simtime_t time = (std::get<2>(hist[1]) - std::get<2>(hist[0]));
-    double acceleration = 2*(length/pow(time.dbl(), 2.0));
+    //double acceleration = 2*(length/pow(time.dbl(), 2.0));
+    double acceleration = length/pow(time.dbl(), 2.0);
     return acceleration;
 }
 
